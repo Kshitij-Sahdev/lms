@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-background-main text-white;
+  }
+
+  body {
+    @apply min-h-screen font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background-paper;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-background-elevated rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-dark;
+  }
+}
+
+@layer components {
+  /* Glass morphism component */
+  .glass {
+    @apply bg-opacity-70 backdrop-blur-glass bg-background-paper border border-white/5 shadow-glass;
+  }
+
+  /* Button styles */
+  .btn {
+    @apply px-4 py-2 rounded-md transition-all duration-300 font-medium;
+  }
+
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white;
+  }
+
+  .btn-outline {
+    @apply border border-primary text-primary hover:bg-primary hover:text-white;
+  }
+
+  /* Card component */
+  .card {
+    @apply p-6 rounded-lg bg-background-paper;
+  }
+
+  .card-glass {
+    @apply p-6 rounded-lg glass;
+  }
+} 
