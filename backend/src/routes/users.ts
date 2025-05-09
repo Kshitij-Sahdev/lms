@@ -111,15 +111,17 @@ router.get('/teachers', authenticate, async (req: AuthRequest, res: Response) =>
 // Get user stats (admin only)
 router.get('/stats', authenticate, authorize([UserRole.ADMIN]), async (req: Request, res: Response) => {
   try {
-    const stats = await User.aggregate([
-      {
-        $group: {
-          _id: '$role',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-    res.json(stats);
+    const totalUsers = await User.countDocuments();
+    const totalStudents = await User.countDocuments({ role: UserRole.STUDENT });
+    const totalTeachers = await User.countDocuments({ role: UserRole.TEACHER });
+    const totalAdmins = await User.countDocuments({ role: UserRole.ADMIN });
+    
+    res.json({
+      totalUsers,
+      totalStudents,
+      totalTeachers,
+      totalAdmins,
+    });
   } catch (error) {
     console.error('Error fetching user stats:', error);
     res.status(500).json({ message: 'Server error' });
@@ -135,7 +137,7 @@ router.delete('/:id', authenticate, authorize([UserRole.ADMIN]), async (req: Req
       return res.status(404).json({ message: 'User not found' });
     }
     
-    await user.remove();
+    await User.deleteOne({ _id: req.params.id });
     
     res.json({ message: 'User deleted' });
   } catch (error) {

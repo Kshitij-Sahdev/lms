@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance with default config
-const api = axios.create({
+const apiInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -13,7 +13,7 @@ const api = axios.create({
 });
 
 // Request interceptor for adding auth token
-api.interceptors.request.use(
+apiInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
     
@@ -27,7 +27,7 @@ api.interceptors.request.use(
 );
 
 // Response interceptor for handling errors
-api.interceptors.response.use(
+apiInstance.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     // Handle error responses
@@ -64,33 +64,36 @@ api.interceptors.response.use(
   }
 );
 
+// Export the axios instance as a named export
+export const api = apiInstance;
+
 // Helper method for GET requests
 export const get = async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
-  const response: AxiosResponse<T> = await api.get(url, config);
+  const response: AxiosResponse<T> = await apiInstance.get(url, config);
   return response.data;
 };
 
 // Helper method for POST requests
 export const post = async <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
-  const response: AxiosResponse<T> = await api.post(url, data, config);
+  const response: AxiosResponse<T> = await apiInstance.post(url, data, config);
   return response.data;
 };
 
 // Helper method for PUT requests
 export const put = async <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
-  const response: AxiosResponse<T> = await api.put(url, data, config);
+  const response: AxiosResponse<T> = await apiInstance.put(url, data, config);
   return response.data;
 };
 
 // Helper method for PATCH requests
 export const patch = async <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
-  const response: AxiosResponse<T> = await api.patch(url, data, config);
+  const response: AxiosResponse<T> = await apiInstance.patch(url, data, config);
   return response.data;
 };
 
 // Helper method for DELETE requests
 export const del = async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
-  const response: AxiosResponse<T> = await api.delete(url, config);
+  const response: AxiosResponse<T> = await apiInstance.delete(url, config);
   return response.data;
 };
 

@@ -80,31 +80,60 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
   }
 };
 
-/**
- * Generate a 2FA verification email
- */
-export const send2FAVerificationEmail = async (to: string, code: string): Promise<boolean> => {
-  const subject = 'Knowledge Chakra - Two-Factor Authentication Code';
-  
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-      <h2 style="color: #FF6B00; text-align: center;">Knowledge Chakra</h2>
-      <div style="background-color: #f9f9f9; border-radius: 5px; padding: 15px; margin: 20px 0;">
-        <h3 style="margin-top: 0;">Two-Factor Authentication Code</h3>
-        <p>Your verification code is:</p>
-        <div style="text-align: center; margin: 20px 0;">
-          <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; padding: 10px 20px; background-color: #FF6B00; color: white; border-radius: 4px;">${code}</span>
-        </div>
-        <p>This code will expire in 10 minutes.</p>
-        <p>If you didn't request this code, please ignore this email.</p>
-      </div>
-      <p style="font-size: 12px; text-align: center; color: #777;">
-        &copy; ${new Date().getFullYear()} Knowledge Chakra. All rights reserved.
-      </p>
-    </div>
-  `;
-  
-  return sendEmail({ to, subject, html });
+// Email configuration
+const emailConfig = {
+  service: process.env.EMAIL_SERVICE || 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  from: process.env.EMAIL_FROM || 'Knowledge Chakra <noreply@example.com>',
 };
 
-export default { sendEmail, send2FAVerificationEmail }; 
+/**
+ * Send a 2FA verification email
+ */
+export const send2FAVerificationEmail = async (email: string, code: string): Promise<boolean> => {
+  try {
+    // Check if running in development mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV MODE] 2FA code for ${email}: ${code}`);
+      return true;
+    }
+    
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      service: emailConfig.service,
+      auth: emailConfig.auth,
+    });
+    
+    // Email content
+    const mailOptions = {
+      from: emailConfig.from,
+      to: email,
+      subject: 'Your Knowledge Chakra Verification Code',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #FF6600;">Knowledge Chakra - 2FA Verification</h2>
+          <p>Your verification code is:</p>
+          <h1 style="font-size: 32px; letter-spacing: 5px; background-color: #f4f4f4; padding: 10px; text-align: center; font-family: monospace;">${code}</h1>
+          <p>This code will expire in 10 minutes.</p>
+          <p>If you didn't request this code, please ignore this email.</p>
+        </div>
+      `,
+    };
+    
+    // Send email
+    await transporter.sendMail(mailOptions);
+    
+    return true;
+  } catch (error) {
+    console.error('Error sending 2FA email:', error);
+    return false;
+  }
+};
+
+export default {
+  emailConfig,
+  send2FAVerificationEmail,
+}; 

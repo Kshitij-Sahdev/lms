@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import TwoFactorCode, { ITwoFactorCode } from '../models/TwoFactorCode';
+import TwoFactorCode from '../models/TwoFactorCode';
 import { send2FAVerificationEmail } from '../config/email';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
@@ -90,37 +90,8 @@ const sendCodeByEmail = async (email: string, code: string): Promise<void> => {
   await transporter.sendMail(mailOptions);
 };
 
-/**
- * Verify a 2FA code
- */
-export const verify2FACode = async (email: string, code: string): Promise<boolean> => {
-  try {
-    // Find the most recent unused code for this email that hasn't expired
-    const twoFactorCode = await TwoFactorCode.findOne({
-      email,
-      code,
-      used: false,
-      expiresAt: { $gt: new Date() },
-    }).sort({ createdAt: -1 });
-    
-    if (!twoFactorCode) {
-      return false;
-    }
-    
-    // Mark the code as used
-    twoFactorCode.used = true;
-    await twoFactorCode.save();
-    
-    return true;
-  } catch (error) {
-    console.error('Error verifying 2FA code:', error);
-    return false;
-  }
-};
-
 export default {
   generateSixDigitCode,
   generateUUID,
   createAndSend2FACode,
-  verify2FACode,
 }; 

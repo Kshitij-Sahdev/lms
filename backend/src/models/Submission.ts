@@ -4,37 +4,34 @@ import { IAssessment } from './Assessment';
 
 // Submission status enum
 export enum SubmissionStatus {
-  DRAFT = 'draft',
-  SUBMITTED = 'submitted',
+  PENDING = 'pending',
   GRADED = 'graded',
-  LATE = 'late',
+  RESUBMITTED = 'resubmitted',
 }
 
-// Answer to a question
-export interface IAnswer {
+// Submission answer interface
+export interface ISubmissionAnswer {
   questionId: string;
-  selectedOptions?: string[]; // For multiple choice
-  textAnswer?: string; // For text/short answer
-  isCorrect?: boolean;
-  pointsEarned?: number;
+  answer: string;
+  points?: number;
+  feedback?: string;
 }
 
-const AnswerSchema: Schema = new Schema({
+// Submission answer schema
+const SubmissionAnswerSchema: Schema = new Schema({
   questionId: {
     type: String,
     required: true,
   },
-  selectedOptions: [{
+  answer: {
     type: String,
-  }],
-  textAnswer: {
-    type: String,
+    required: true,
   },
-  isCorrect: {
-    type: Boolean,
-  },
-  pointsEarned: {
+  points: {
     type: Number,
+  },
+  feedback: {
+    type: String,
   },
 });
 
@@ -42,18 +39,13 @@ const AnswerSchema: Schema = new Schema({
 export interface ISubmission extends Document {
   student: IUser['_id'];
   assessment: IAssessment['_id'];
-  answers: IAnswer[];
-  fileUrl?: string;
-  textContent?: string;
-  linkUrl?: string;
+  answers: ISubmissionAnswer[];
   status: SubmissionStatus;
   score?: number;
   feedback?: string;
-  gradedBy?: IUser['_id'];
-  submittedAt?: Date;
+  submittedAt: Date;
   gradedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  gradedBy?: IUser['_id'];
 }
 
 // Submission schema
@@ -69,20 +61,11 @@ const SubmissionSchema: Schema = new Schema(
       ref: 'Assessment',
       required: true,
     },
-    answers: [AnswerSchema],
-    fileUrl: {
-      type: String,
-    },
-    textContent: {
-      type: String,
-    },
-    linkUrl: {
-      type: String,
-    },
+    answers: [SubmissionAnswerSchema],
     status: {
       type: String,
       enum: Object.values(SubmissionStatus),
-      default: SubmissionStatus.DRAFT,
+      default: SubmissionStatus.PENDING,
     },
     score: {
       type: Number,
@@ -90,15 +73,16 @@ const SubmissionSchema: Schema = new Schema(
     feedback: {
       type: String,
     },
-    gradedBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-    },
     submittedAt: {
       type: Date,
+      default: Date.now,
     },
     gradedAt: {
       type: Date,
+    },
+    gradedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
     },
   },
   {
@@ -109,9 +93,10 @@ const SubmissionSchema: Schema = new Schema(
 // Create compound index for student-assessment pair
 SubmissionSchema.index({ student: 1, assessment: 1 }, { unique: true });
 
-// Create indexes for common queries
+// Create indexes for faster queries
 SubmissionSchema.index({ assessment: 1 });
 SubmissionSchema.index({ student: 1 });
 SubmissionSchema.index({ status: 1 });
+SubmissionSchema.index({ submittedAt: -1 });
 
 export default mongoose.model<ISubmission>('Submission', SubmissionSchema); 

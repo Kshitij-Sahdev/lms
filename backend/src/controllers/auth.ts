@@ -1,100 +1,13 @@
 import { Request, Response } from 'express';
-import User, { UserRole, IUser } from '../models/User';
 import { AuthRequest } from '../middleware/auth';
-import { createAndSend2FACode, verify2FACode } from '../utils/twoFactorAuth';
-import { generateToken } from '../middleware/auth';
+import User, { IUser, UserRole } from '../models/User';
 import TwoFactorCode from '../models/TwoFactorCode';
+import { generateToken } from '../middleware/auth';
+import { createAndSend2FACode } from '../utils/twoFactorAuth';
+import mongoose from 'mongoose';
 
 /**
- * Handle webhook from Clerk to create or update user in our database
- */
-export const handleClerkWebhook = async (req: Request, res: Response) => {
-  try {
-    const { type, data } = req.body;
-    
-    // Handle user creation
-    if (type === 'user.created') {
-      const { id, email_addresses, first_name, last_name } = data;
-      
-      // Email might be in an array, get the primary one
-      const email = email_addresses[0]?.email_address;
-      
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required' });
-      }
-      
-      // Create new user in our database
-      const user = new User({
-        clerkId: id,
-        email,
-        firstName: first_name || '',
-        lastName: last_name || '',
-        role: UserRole.STUDENT, // Default role is student
-      });
-      
-      await user.save();
-      
-      return res.status(201).json({ message: 'User created successfully' });
-    }
-    
-    // Handle user update
-    if (type === 'user.updated') {
-      const { id, email_addresses, first_name, last_name } = data;
-      
-      // Email might be in an array, get the primary one
-      const email = email_addresses[0]?.email_address;
-      
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required' });
-      }
-      
-      // Find and update user in our database
-      const user = await User.findOneAndUpdate(
-        { clerkId: id },
-        {
-          email,
-          firstName: first_name || '',
-          lastName: last_name || '',
-        },
-        { new: true }
-      );
-      
-      if (!user) {
-        // If user doesn't exist, create a new one
-        const newUser = new User({
-          clerkId: id,
-          email,
-          firstName: first_name || '',
-          lastName: last_name || '',
-          role: UserRole.STUDENT,
-        });
-        
-        await newUser.save();
-      }
-      
-      return res.status(200).json({ message: 'User updated successfully' });
-    }
-    
-    // Handle user deletion
-    if (type === 'user.deleted') {
-      const { id } = data;
-      
-      // Delete user from our database
-      await User.findOneAndDelete({ clerkId: id });
-      
-      return res.status(200).json({ message: 'User deleted successfully' });
-    }
-    
-    // If we don't handle the event type
-    return res.status(400).json({ message: 'Unsupported event type' });
-  } catch (error) {
-    console.error('Clerk webhook error:', error);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
-
-/**
- * Get current user's data
+ * Get current user
  */
 export const getCurrentUser = async (req: AuthRequest, res: Response) => {
   try {
@@ -116,7 +29,45 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * Send 2FA code to user's email
+ * Handle Clerk webhook events
+ */
+export const handleClerkWebhook = async (req: Request, res: Response) => {
+  try {
+    // Get the webhook data
+    const { data, type } = req.body;
+    
+    // Process user creation event
+    if (type === 'user.created') {
+      // Extract user data from Clerk webhook
+      const { id, email_addresses, first_name, last_name } = data;
+      
+      // Check if user exists
+      const existingUser = await User.findOne({ email: email_addresses[0].email_address });
+      
+      if (!existingUser) {
+        // Create new user
+        const newUser = new User({
+          firstName: first_name || 'User',
+          lastName: last_name || 'Name',
+          email: email_addresses[0].email_address,
+          clerkId: id,
+          role: UserRole.STUDENT, // Default role
+        });
+        
+        await newUser.save();
+        console.log(`User created from Clerk webhook: ${newUser.email}`);
+      }
+    }
+    
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('Clerk webhook error:', error);
+    return res.status(500).json({ message: 'Webhook processing error' });
+  }
+};
+
+/**
+ * Create and send 2FA code
  */
 export const send2FACode = async (req: Request, res: Response) => {
   try {
@@ -126,28 +77,28 @@ export const send2FACode = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Email is required' });
     }
     
-    // Find user by email
+    // Find user
     const user = await User.findOne({ email });
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Only send 2FA code if user's role requires it
+    // Check if user requires 2FA
     if (!user.requires2FA) {
-      return res.status(400).json({ message: '2FA is not required for this user' });
+      return res.status(400).json({ message: 'This user does not require 2FA' });
     }
     
-    // Generate and send code
-    const codeSent = await createAndSend2FACode(email);
+    // Create and send code
+    const success = await createAndSend2FACode(email);
     
-    if (!codeSent) {
-      return res.status(500).json({ message: 'Failed to send 2FA code' });
+    if (!success) {
+      return res.status(500).json({ message: 'Failed to create or send 2FA code' });
     }
     
-    return res.status(200).json({ message: '2FA code sent successfully' });
+    return res.status(200).json({ message: 'Code sent successfully' });
   } catch (error) {
-    console.error('Send 2FA code error:', error);
+    console.error('2FA send error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -164,7 +115,7 @@ export const verify2FACode = async (req: Request, res: Response) => {
     }
     
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).lean();
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -186,12 +137,16 @@ export const verify2FACode = async (req: Request, res: Response) => {
     twoFactorCode.used = true;
     await twoFactorCode.save();
     
+    // Get user ID as string
+    const userId = user._id ? user._id.toString() : '';
+    const userRole = user.role ? user.role.toString() : '';
+    
     // Generate token
-    const token = generateToken(user._id.toString(), user.role.toString(), user.email);
+    const token = generateToken(userId, userRole, user.email);
     
     return res.status(200).json({
       user: {
-        id: user._id,
+        id: userId,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -206,8 +161,8 @@ export const verify2FACode = async (req: Request, res: Response) => {
 };
 
 export default {
-  handleClerkWebhook,
   getCurrentUser,
+  handleClerkWebhook,
   send2FACode,
   verify2FACode,
 }; 

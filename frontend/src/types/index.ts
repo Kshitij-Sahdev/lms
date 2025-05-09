@@ -10,21 +10,18 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  role: UserRole;
   profilePicture?: string;
-  clerkId: string;
+  role: UserRole;
   requires2FA: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 // Course-related types
 export interface Course {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   thumbnail?: string;
-  instructor: User;
+  instructor: string | User;
   modules: Module[];
   published: boolean;
   createdAt: string;
@@ -32,14 +29,14 @@ export interface Course {
 }
 
 export interface Module {
-  id: string;
+  _id: string;
   title: string;
   lessons: Lesson[];
   order: number;
 }
 
 export interface Lesson {
-  id: string;
+  _id: string;
   title: string;
   content: string;
   type: LessonType;
@@ -66,25 +63,27 @@ export enum AssessmentType {
   ASSIGNMENT = 'assignment',
 }
 
-export interface Question {
-  id: string;
-  text: string;
-  type: QuestionType;
-  options: QuestionOption[];
-  points: number;
+export enum QuestionType {
+  MULTIPLE_CHOICE = 'multiple_choice',
+  TRUE_FALSE = 'true_false',
+  SHORT_ANSWER = 'short_answer',
+  ESSAY = 'essay',
+  FILE_UPLOAD = 'file_upload',
 }
 
 export interface QuestionOption {
   id: string;
   text: string;
-  isCorrect: boolean;
+  isCorrect?: boolean;
 }
 
-export enum QuestionType {
-  MULTIPLE_CHOICE = 'multiple_choice',
-  SINGLE_CHOICE = 'single_choice',
-  TRUE_FALSE = 'true_false',
-  SHORT_ANSWER = 'short_answer',
+export interface Question {
+  id: string;
+  text: string;
+  type: QuestionType;
+  options?: QuestionOption[];
+  points: number;
+  correctAnswer?: string;
 }
 
 export interface Assignment {
@@ -104,35 +103,19 @@ export enum SubmissionType {
 }
 
 // Live class types
-export enum LiveClassPlatform {
-  ZOOM = 'zoom',
-  GOOGLE_MEET = 'google_meet',
-  MICROSOFT_TEAMS = 'microsoft_teams',
-  OTHER = 'other',
-}
-
-export enum LiveClassStatus {
-  SCHEDULED = 'scheduled',
-  LIVE = 'live',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-}
-
 export interface LiveClass {
-  id: string;
+  _id: string;
   title: string;
-  description: string;
-  course: Course | string;
-  instructor: User | string;
+  description?: string;
+  course: string | Course;
+  instructor: string | User;
   startTime: string;
   endTime: string;
-  platform: LiveClassPlatform;
-  meetingUrl: string;
-  meetingId?: string;
-  passcode?: string;
-  status: LiveClassStatus;
-  recordingUrl?: string;
-  attendees: (User | string)[];
+  meetingLink: string;
+  isRecurring: boolean;
+  recursOn?: string[];
+  maxParticipants?: number;
+  isCancelled: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -140,24 +123,31 @@ export interface LiveClass {
 // Notification types
 export enum NotificationType {
   COURSE = 'course',
-  ASSIGNMENT = 'assignment',
-  ANNOUNCEMENT = 'announcement',
+  ASSESSMENT = 'assessment',
   LIVE_CLASS = 'live_class',
-  SYSTEM = 'system',
   GRADE = 'grade',
+  ANNOUNCEMENT = 'announcement',
+  SYSTEM = 'system',
+}
+
+export enum NotificationPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
 }
 
 export interface Notification {
-  id: string;
-  user: User | string;
+  _id: string;
+  user: string | User;
   title: string;
   message: string;
   type: NotificationType;
-  read: boolean;
+  priority?: NotificationPriority;
   link?: string;
+  isRead: boolean;
   resourceId?: string;
   createdAt: string;
-  readAt?: string;
+  updatedAt: string;
 }
 
 // Progress tracking
@@ -208,10 +198,9 @@ export interface Enrollment {
 
 // Submission status enum
 export enum SubmissionStatus {
-  DRAFT = 'draft',
-  SUBMITTED = 'submitted',
+  PENDING = 'pending',
   GRADED = 'graded',
-  LATE = 'late',
+  RESUBMITTED = 'resubmitted',
 }
 
 // Answer to a question
@@ -224,38 +213,36 @@ export interface Answer {
 }
 
 // Submission interface
+export interface SubmissionAnswer {
+  questionId: string;
+  answer: string;
+  points?: number;
+  feedback?: string;
+}
+
 export interface Submission {
-  id: string;
-  student: User | string;
-  assessment: Assessment | string;
-  answers: Answer[];
-  fileUrl?: string;
-  textContent?: string;
-  linkUrl?: string;
+  _id: string;
+  student: string | User;
+  assessment: string | Assessment;
+  answers: SubmissionAnswer[];
   status: SubmissionStatus;
   score?: number;
   feedback?: string;
-  gradedBy?: User | string;
-  submittedAt?: string;
+  submittedAt: string;
   gradedAt?: string;
-  createdAt: string;
-  updatedAt: string;
+  gradedBy?: string | User;
 }
 
 // Assessment interface
 export interface Assessment {
-  id: string;
+  _id: string;
   title: string;
-  description: string;
-  course: Course | string;
+  description?: string;
+  course: string | Course;
   type: AssessmentType;
   questions: Question[];
   dueDate?: string;
-  timeLimit?: number; // in minutes, for quizzes
-  passingScore: number;
-  points: number;
-  submissionType: SubmissionType;
-  published: boolean;
+  createdBy: string | User;
   createdAt: string;
   updatedAt: string;
 }
@@ -271,6 +258,16 @@ export interface AuthState {
 }
 
 // API response interfaces
+export interface ApiError {
+  message: string;
+  status?: number;
+}
+
+export interface ApiResponse<T> {
+  data?: T;
+  error?: ApiError;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   totalPages: number;

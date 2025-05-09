@@ -1,14 +1,21 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import { IUser } from './User';
 
-// Notification type enum
+// Notification types enum
 export enum NotificationType {
   COURSE = 'course',
-  ASSIGNMENT = 'assignment',
-  ANNOUNCEMENT = 'announcement',
+  ASSESSMENT = 'assessment',
   LIVE_CLASS = 'live_class',
-  SYSTEM = 'system',
   GRADE = 'grade',
+  ANNOUNCEMENT = 'announcement',
+  SYSTEM = 'system',
+}
+
+// Notification priority enum
+export enum NotificationPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
 }
 
 // Notification interface
@@ -17,11 +24,12 @@ export interface INotification extends Document {
   title: string;
   message: string;
   type: NotificationType;
-  read: boolean;
+  priority?: NotificationPriority;
   link?: string;
-  resourceId?: string; // ID of the related resource (course, assignment, etc.)
+  isRead: boolean;
+  resourceId?: string;
   createdAt: Date;
-  readAt?: Date;
+  updatedAt: Date;
 }
 
 // Notification schema
@@ -44,20 +52,22 @@ const NotificationSchema: Schema = new Schema(
     type: {
       type: String,
       enum: Object.values(NotificationType),
-      required: true,
+      default: NotificationType.SYSTEM,
     },
-    read: {
-      type: Boolean,
-      default: false,
+    priority: {
+      type: String,
+      enum: Object.values(NotificationPriority),
+      default: NotificationPriority.MEDIUM,
     },
     link: {
       type: String,
     },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
     resourceId: {
       type: String,
-    },
-    readAt: {
-      type: Date,
     },
   },
   {
@@ -67,7 +77,7 @@ const NotificationSchema: Schema = new Schema(
 
 // Create indexes for faster queries
 NotificationSchema.index({ user: 1 });
-NotificationSchema.index({ read: 1 });
+NotificationSchema.index({ isRead: 1 });
 NotificationSchema.index({ type: 1 });
 NotificationSchema.index({ createdAt: -1 });
 

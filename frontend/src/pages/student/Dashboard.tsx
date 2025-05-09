@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import useAuth from '@/hooks/useAuth';
+import { useAuth } from '@clerk/clerk-react';
 import { Course, LiveClass, Notification } from '@/types';
 import CourseCard from '@/components/CourseCard';
 
@@ -82,147 +82,131 @@ const sampleNotifications: Notification[] = [
   },
 ];
 
-const StudentDashboard: React.FC = () => {
-  const { user } = useAuth();
+const StudentDashboard = () => {
+  const { getToken } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>(sampleCourses);
   const [upcomingClasses, setUpcomingClasses] = useState<LiveClass[]>(sampleLiveClasses);
   const [notifications, setNotifications] = useState<Notification[]>(sampleNotifications);
-  
-  // Placeholder for API calls
+  const [upcomingAssessments, setUpcomingAssessments] = useState([]);
+
   useEffect(() => {
-    // In a real app, you would fetch data from your API
-    // api.get('/courses/enrolled').then(data => setCourses(data));
-    // api.get('/live-classes/upcoming').then(data => setUpcomingClasses(data));
-    // api.get('/notifications').then(data => setNotifications(data));
-  }, []);
-  
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        // In a real implementation, these would be actual API calls
+        // Mock data for demonstration
+        setCourses([
+          { _id: '1', title: 'Introduction to Programming', instructor: 'Jane Doe', progress: 25 },
+          { _id: '2', title: 'Web Development Fundamentals', instructor: 'John Smith', progress: 50 },
+          { _id: '3', title: 'Data Structures and Algorithms', instructor: 'Alice Johnson', progress: 10 },
+        ]);
+        
+        setUpcomingAssessments([
+          { _id: '1', title: 'Programming Quiz', dueDate: '2023-10-15', course: 'Introduction to Programming' },
+          { _id: '2', title: 'Web Project', dueDate: '2023-10-20', course: 'Web Development Fundamentals' },
+        ]);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-  };
-  
+
+    fetchDashboardData();
+  }, [getToken]);
+
+  if (isLoading) {
+    return (
+      <div className="p-4">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-surface-light rounded w-1/4"></div>
+          <div className="h-32 bg-surface-light rounded w-full"></div>
+          <div className="h-8 bg-surface-light rounded w-1/4"></div>
+          <div className="h-32 bg-surface-light rounded w-full"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* Welcome section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Welcome back, {user?.firstName || 'Student'}!</h1>
-        <p className="text-gray-300 mt-2">Continue your learning journey</p>
-      </div>
+      <h1 className="text-2xl font-bold mb-6">Student Dashboard</h1>
       
-      {/* Main dashboard grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Enrolled courses section */}
-        <div className="lg:col-span-2">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-white">My Courses</h2>
-            <Link to="/courses" className="text-primary hover:text-primary-light text-sm">
-              View All
-            </Link>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Stats overview */}
+        <div className="bg-surface p-6 rounded-lg">
+          <h2 className="text-lg font-semibold mb-4">Your Progress</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-surface-light p-4 rounded-lg text-center">
+              <p className="text-3xl font-bold text-primary">{courses.length}</p>
+              <p className="text-text-secondary">Enrolled Courses</p>
+            </div>
+            <div className="bg-surface-light p-4 rounded-lg text-center">
+              <p className="text-3xl font-bold text-primary">{upcomingAssessments.length}</p>
+              <p className="text-text-secondary">Upcoming Assessments</p>
+            </div>
           </div>
-          
-          {courses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {courses.map((course) => (
-                <CourseCard 
-                  key={course.id} 
-                  course={course} 
-                  isEnrolled={true}
-                  progress={Math.floor(Math.random() * 100)} // Random progress for demo
-                />
+        </div>
+        
+        {/* Calendar/upcoming */}
+        <div className="bg-surface p-6 rounded-lg">
+          <h2 className="text-lg font-semibold mb-4">Upcoming Deadlines</h2>
+          {upcomingAssessments.length > 0 ? (
+            <ul className="space-y-3">
+              {upcomingAssessments.map((assessment: any) => (
+                <li key={assessment._id} className="flex justify-between items-center p-3 bg-surface-light rounded">
+                  <div>
+                    <p className="font-medium">{assessment.title}</p>
+                    <p className="text-sm text-text-secondary">{assessment.course}</p>
+                  </div>
+                  <p className="text-sm bg-primary/20 text-primary px-2 py-1 rounded">
+                    Due: {new Date(assessment.dueDate).toLocaleDateString()}
+                  </p>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
-            <div className="card p-6 text-center">
-              <p className="text-gray-400 mb-4">You are not enrolled in any courses yet.</p>
-              <Link to="/courses/browse" className="btn btn-primary">
-                Browse Courses
-              </Link>
-            </div>
+            <p className="text-text-secondary">No upcoming deadlines</p>
           )}
         </div>
-        
-        {/* Sidebar sections */}
-        <div className="space-y-6">
-          {/* Upcoming live classes */}
-          <div className="card">
-            <h2 className="text-xl font-semibold text-white mb-4">Upcoming Live Classes</h2>
-            
-            {upcomingClasses.length > 0 ? (
-              <div className="space-y-4">
-                {upcomingClasses.map((liveClass) => (
-                  <div key={liveClass.id} className="border-b border-background-elevated pb-3 last:border-b-0 last:pb-0">
-                    <h3 className="font-medium text-white">{liveClass.title}</h3>
-                    <p className="text-sm text-gray-400 mb-2">{liveClass.description}</p>
-                    <p className="text-xs text-gray-500 mb-1">
-                      {formatDate(liveClass.startTime)}
-                    </p>
-                    <a 
-                      href={liveClass.meetingUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-primary-light text-sm inline-block mt-1"
-                    >
-                      Join Meeting
-                    </a>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400">No upcoming live classes.</p>
-            )}
-            
-            <div className="mt-4 pt-3 border-t border-background-elevated">
-              <Link to="/calendar" className="text-primary hover:text-primary-light text-sm">
-                View Full Schedule
-              </Link>
-            </div>
-          </div>
-          
-          {/* Notifications */}
-          <div className="card">
-            <h2 className="text-xl font-semibold text-white mb-4">Notifications</h2>
-            
-            {notifications.length > 0 ? (
-              <div className="space-y-3">
-                {notifications.map((notification) => (
-                  <div 
-                    key={notification.id}
-                    className={`p-2 rounded-md ${notification.read ? 'bg-transparent' : 'bg-background-elevated'}`}
-                  >
-                    <h3 className="font-medium text-white text-sm">{notification.title}</h3>
-                    <p className="text-xs text-gray-400 mb-1">{notification.message}</p>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-xs text-gray-500">
-                        {new Date(notification.createdAt).toRelativeTime()}
-                      </span>
-                      {notification.link && (
-                        <Link to={notification.link} className="text-primary hover:text-primary-light text-xs">
-                          View
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400">No new notifications.</p>
-            )}
-            
-            <div className="mt-4 pt-3 border-t border-background-elevated">
-              <Link to="/notifications" className="text-primary hover:text-primary-light text-sm">
-                View All Notifications
-              </Link>
-            </div>
-          </div>
+      </div>
+      
+      {/* My courses */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">My Courses</h2>
+          <Link to="/student/courses" className="text-primary hover:text-primary-dark">
+            View All
+          </Link>
         </div>
+        
+        {courses.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {courses.map((course: any) => (
+              <Link key={course._id} to={`/student/courses/${course._id}`} className="block">
+                <div className="bg-surface rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all">
+                  <div className="h-40 bg-surface-light"></div>
+                  <div className="p-4">
+                    <h3 className="font-semibold mb-2">{course.title}</h3>
+                    <p className="text-sm text-text-secondary mb-3">
+                      Instructor: {course.instructor}
+                    </p>
+                    <div className="relative h-2 bg-surface-light rounded overflow-hidden">
+                      <div 
+                        className="absolute top-0 left-0 h-full bg-primary"
+                        style={{ width: `${course.progress}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-right mt-1">{course.progress}% complete</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-text-secondary">You are not enrolled in any courses yet</p>
+        )}
       </div>
     </div>
   );

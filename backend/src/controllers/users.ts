@@ -1,6 +1,6 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import User, { UserRole, IUser } from '../models/User';
+import User, { UserRole } from '../models/User';
 import Course from '../models/Course';
 import Enrollment from '../models/Enrollment';
 
@@ -13,159 +13,47 @@ export const getCurrentUser = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
     
-    const user = await User.findById(req.user.id)
-      .select('-__v');
+    const user = await User.findById(req.user.id).select('-__v');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    return res.status(200).json(user);
+    res.json(user);
   } catch (error) {
-    console.error('Error getting current user:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching current user:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 /**
  * Get all users (admin only)
  */
-export const getAllUsers = async (req: AuthRequest, res: Response) => {
+export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    
-    // Verify user is an admin
-    if (req.user.role !== UserRole.ADMIN) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-    
-    const { 
-      search, 
-      role, 
-      limit = 20, 
-      page = 1,
-      sortBy = 'createdAt',
-      sortOrder = 'desc' 
-    } = req.query;
-    
-    // Build query
-    const query: any = {};
-    
-    // Filter by role
-    if (role) {
-      query.role = role;
-    }
-    
-    // Search by name or email
-    if (search) {
-      query.$or = [
-        { firstName: { $regex: search, $options: 'i' } },
-        { lastName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-      ];
-    }
-    
-    // Calculate pagination
-    const skip = (Number(page) - 1) * Number(limit);
-    
-    // Build sort
-    const sort: any = {};
-    sort[sortBy as string] = sortOrder === 'asc' ? 1 : -1;
-    
-    // Find users
-    const users = await User.find(query)
-      .select('-__v')
-      .sort(sort)
-      .skip(skip)
-      .limit(Number(limit));
-    
-    // Count total users for pagination
-    const totalUsers = await User.countDocuments(query);
-    
-    return res.status(200).json({
-      users,
-      totalPages: Math.ceil(totalUsers / Number(limit)),
-      currentPage: Number(page),
-      totalUsers,
-    });
+    const users = await User.find().select('-__v');
+    res.json(users);
   } catch (error) {
-    console.error('Error getting users:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 /**
- * Get user by ID (admin only)
+ * Get user by ID
  */
-export const getUserById = async (req: AuthRequest, res: Response) => {
+export const getUserById = async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    
-    // Verify user is an admin or the user is requesting their own data
-    if (req.user.role !== UserRole.ADMIN && req.user.id !== req.params.id) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-    
-    const user = await User.findById(req.params.id)
-      .select('-__v');
+    const user = await User.findById(req.params.id).select('-__v');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    return res.status(200).json(user);
+    res.json(user);
   } catch (error) {
-    console.error('Error getting user:', error);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
-
-/**
- * Update user role (admin only)
- */
-export const updateUserRole = async (req: AuthRequest, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    
-    // Verify user is an admin
-    if (req.user.role !== UserRole.ADMIN) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-    
-    const { id } = req.params;
-    const { role } = req.body;
-    
-    if (!role || !Object.values(UserRole).includes(role as UserRole)) {
-      return res.status(400).json({ message: 'Valid role is required' });
-    }
-    
-    // Find user
-    const user = await User.findById(id);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Update role
-    user.role = role as UserRole;
-    
-    // If changing to teacher or admin, enable 2FA
-    if (role === UserRole.TEACHER || role === UserRole.ADMIN) {
-      user.requires2FA = true;
-    }
-    
-    await user.save();
-    
-    return res.status(200).json(user);
-  } catch (error) {
-    console.error('Error updating user role:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -187,17 +75,72 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Update profile
+    // Update fields
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
     if (profilePicture) user.profilePicture = profilePicture;
     
     await user.save();
     
-    return res.status(200).json(user);
+    res.json(user);
   } catch (error) {
     console.error('Error updating profile:', error);
-    return res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * Update user role (admin only)
+ */
+export const updateUserRole = async (req: Request, res: Response) => {
+  try {
+    const { role } = req.body;
+    
+    if (!role || !Object.values(UserRole).includes(role as UserRole)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+    
+    const user = await User.findById(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    user.role = role as UserRole;
+    
+    // Teachers and admins need 2FA
+    if (role === UserRole.TEACHER || role === UserRole.ADMIN) {
+      user.requires2FA = true;
+    }
+    
+    await user.save();
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * Get user stats (admin only)
+ */
+export const getUserStats = async (req: Request, res: Response) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalStudents = await User.countDocuments({ role: UserRole.STUDENT });
+    const totalTeachers = await User.countDocuments({ role: UserRole.TEACHER });
+    const totalAdmins = await User.countDocuments({ role: UserRole.ADMIN });
+    
+    res.json({
+      totalUsers,
+      totalStudents,
+      totalTeachers,
+      totalAdmins,
+    });
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -245,69 +188,6 @@ export const getTeachers = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error('Error getting teachers:', error);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
-
-/**
- * Get user stats (admin only)
- */
-export const getUserStats = async (req: AuthRequest, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    
-    // Verify user is an admin
-    if (req.user.role !== UserRole.ADMIN) {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-    
-    // Count users by role
-    const totalUsers = await User.countDocuments();
-    const totalStudents = await User.countDocuments({ role: UserRole.STUDENT });
-    const totalTeachers = await User.countDocuments({ role: UserRole.TEACHER });
-    const totalAdmins = await User.countDocuments({ role: UserRole.ADMIN });
-    
-    // Count courses
-    const totalCourses = await Course.countDocuments();
-    const totalPublishedCourses = await Course.countDocuments({ published: true });
-    
-    // Count enrollments
-    const totalEnrollments = await Enrollment.countDocuments();
-    
-    // Get new users in the last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const newUsers = await User.countDocuments({
-      createdAt: { $gte: thirtyDaysAgo },
-    });
-    
-    // Get new enrollments in the last 30 days
-    const newEnrollments = await Enrollment.countDocuments({
-      enrolledAt: { $gte: thirtyDaysAgo },
-    });
-    
-    return res.status(200).json({
-      userStats: {
-        totalUsers,
-        totalStudents,
-        totalTeachers,
-        totalAdmins,
-        newUsers,
-      },
-      courseStats: {
-        totalCourses,
-        totalPublishedCourses,
-      },
-      enrollmentStats: {
-        totalEnrollments,
-        newEnrollments,
-      },
-    });
-  } catch (error) {
-    console.error('Error getting user stats:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -368,9 +248,8 @@ export default {
   getCurrentUser,
   getAllUsers,
   getUserById,
-  updateUserRole,
   updateProfile,
-  getTeachers,
+  updateUserRole,
   getUserStats,
   deleteUser,
 }; 

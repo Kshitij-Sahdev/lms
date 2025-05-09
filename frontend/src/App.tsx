@@ -1,181 +1,156 @@
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
 import { Toaster } from 'react-hot-toast';
+
+// Layouts
+import AuthLayout from './layouts/AuthLayout';
+import DashboardLayout from './layouts/DashboardLayout';
+
+// Auth pages
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import VerifyEmail from './pages/auth/VerifyEmail';
+
+// Student pages
+import StudentDashboard from './pages/student/Dashboard';
+import CoursesList from './pages/student/CoursesList';
+import CourseDetails from './pages/student/CourseDetails';
+import AssessmentView from './pages/student/AssessmentView';
+
+// Teacher pages
+import TeacherDashboard from './pages/teacher/Dashboard';
+import ManageCourses from './pages/teacher/ManageCourses';
+import ManageAssessments from './pages/teacher/ManageAssessments';
+import ManageLiveClasses from './pages/teacher/ManageLiveClasses';
+
+// Admin pages
+import AdminDashboard from './pages/admin/Dashboard';
+import ManageUsers from './pages/admin/ManageUsers';
+
+// Shared components
+import NotFound from './pages/NotFound';
+import Loading from './components/common/Loading';
+
+// Types
 import { UserRole } from './types';
 
-// Import pages
-import TwoFactorAuth from './pages/TwoFactorAuth';
-import StudentDashboard from './pages/student/Dashboard';
-
-// Import components
-import Layout from './components/Layout';
-import Navbar from './components/Navbar';
-import ProtectedRoute from './components/ProtectedRoute';
-
-// Placeholder components
-const Home = () => (
-  <div className="min-h-screen bg-background-main flex flex-col items-center justify-center p-4">
-    <div className="card-glass max-w-2xl mx-auto text-center">
-      <h1 className="text-4xl font-bold text-primary mb-4">Knowledge Chakra</h1>
-      <p className="text-xl mb-8">Your Learning Management System</p>
-      <p className="mb-4">Welcome to Knowledge Chakra, a modern Learning Management System built with the MERN stack.</p>
-      <div className="flex gap-4 justify-center mt-6">
-        <button className="btn btn-primary">Get Started</button>
-        <button className="btn btn-outline">Learn More</button>
-      </div>
-    </div>
-  </div>
-);
-
-const Dashboard = () => (
-  <div>
-    <h1 className="text-3xl font-bold text-white mb-6">Dashboard</h1>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div className="card">
-        <h2 className="text-xl font-semibold mb-4">My Courses</h2>
-        <p className="text-gray-400">You have no courses yet.</p>
-        <button className="btn btn-primary mt-4">Browse Courses</button>
-      </div>
-      
-      <div className="card">
-        <h2 className="text-xl font-semibold mb-4">Upcoming Events</h2>
-        <p className="text-gray-400">No upcoming events.</p>
-      </div>
-      
-      <div className="card">
-        <h2 className="text-xl font-semibold mb-4">Recent Notifications</h2>
-        <p className="text-gray-400">No new notifications.</p>
-      </div>
-    </div>
-  </div>
-);
-
-const Unauthorized = () => (
-  <div className="min-h-screen bg-background-main flex items-center justify-center">
-    <div className="card text-center max-w-lg">
-      <h1 className="text-4xl font-bold text-primary mb-4">403</h1>
-      <p className="text-xl mb-8">Access Denied</p>
-      <p className="mb-6">You don't have permission to access this page.</p>
-      <button className="btn btn-primary" onClick={() => window.history.back()}>
-        Go Back
-      </button>
-    </div>
-  </div>
-);
-
-const NotFound = () => (
-  <div className="min-h-screen bg-background-main flex items-center justify-center">
-    <div className="card text-center max-w-lg">
-      <h1 className="text-4xl font-bold text-primary mb-4">404</h1>
-      <p className="text-xl mb-8">Page Not Found</p>
-      <button className="btn btn-primary" onClick={() => window.history.back()}>
-        Go Back
-      </button>
-    </div>
-  </div>
-);
+// Check if we're in dev mode with a valid clerk key
+const isDevelopmentMode = import.meta.env.DEV && 
+  (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 
+   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY === 'pk_test_placeholder');
 
 function App() {
+  const { isLoaded, userId, getToken } = useAuth();
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (isDevelopmentMode) {
+        // In development mode without Clerk, use a mock student role
+        setUserRole(UserRole.STUDENT);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!isLoaded || !userId) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const token = await getToken();
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUserRole(userData.role);
+        } else {
+          console.error('Failed to fetch user data');
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [isLoaded, userId, getToken]);
+
+  if (!isDevelopmentMode && (!isLoaded || isLoading)) {
+    return <Loading />;
+  }
+
   return (
     <>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 5000,
-          style: {
-            background: '#1E1E1E',
-            color: '#fff',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          },
-        }}
-      />
-      
-      <Router>
-        <Routes>
-          {/* Public routes */}
-          <Route 
-            path="/" 
-            element={
-              <>
-                <Navbar />
-                <Home />
-              </>
-            }
-          />
-          
-          {/* 2FA Verification Route */}
-          <Route 
-            path="/two-factor-auth" 
-            element={
-              <ProtectedRoute layout={false}>
-                <TwoFactorAuth />
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* Protected routes - Only accessible when signed in */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
-                <StudentDashboard />
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* Student routes */}
-          <Route 
-            path="/courses" 
-            element={
-              <ProtectedRoute allowedRoles={[UserRole.STUDENT, UserRole.TEACHER, UserRole.ADMIN]}>
-                <div>Student Courses Page</div>
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* Teacher routes */}
-          <Route 
-            path="/teacher/dashboard" 
-            element={
-              <ProtectedRoute allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                <div>Teacher Dashboard</div>
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* Admin routes */}
-          <Route 
-            path="/admin/dashboard" 
-            element={
-              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                <div>Admin Dashboard</div>
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* Unauthorized page */}
-          <Route 
-            path="/unauthorized" 
-            element={
-              <>
-                <Navbar />
-                <Unauthorized />
-              </>
-            }
-          />
-          
-          {/* 404 Page */}
-          <Route 
-            path="*" 
-            element={
-              <>
-                <Navbar />
-                <NotFound />
-              </>
-            }
-          />
-        </Routes>
-      </Router>
+      <Toaster position="top-right" />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<AuthLayout />}>
+          <Route index element={<Login />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
+          <Route path="verify-email" element={<VerifyEmail />} />
+        </Route>
+
+        {/* Protected student routes */}
+        <Route
+          path="/student/*"
+          element={
+            isDevelopmentMode || (userId && userRole === UserRole.STUDENT) ? (
+              <DashboardLayout userRole={UserRole.STUDENT} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        >
+          <Route index element={<StudentDashboard />} />
+          <Route path="courses" element={<CoursesList />} />
+          <Route path="courses/:courseId" element={<CourseDetails />} />
+          <Route path="assessments/:assessmentId" element={<AssessmentView />} />
+        </Route>
+
+        {/* Protected teacher routes */}
+        <Route
+          path="/teacher/*"
+          element={
+            isDevelopmentMode || (userId && userRole === UserRole.TEACHER) ? (
+              <DashboardLayout userRole={UserRole.TEACHER} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        >
+          <Route index element={<TeacherDashboard />} />
+          <Route path="courses" element={<ManageCourses />} />
+          <Route path="assessments" element={<ManageAssessments />} />
+          <Route path="live-classes" element={<ManageLiveClasses />} />
+        </Route>
+
+        {/* Protected admin routes */}
+        <Route
+          path="/admin/*"
+          element={
+            isDevelopmentMode || (userId && userRole === UserRole.ADMIN) ? (
+              <DashboardLayout userRole={UserRole.ADMIN} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<ManageUsers />} />
+        </Route>
+
+        {/* Catch-all route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </>
   );
 }

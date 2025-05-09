@@ -7,253 +7,175 @@ import Submission, { SubmissionStatus } from '../models/Submission';
 import Notification, { NotificationType } from '../models/Notification';
 
 /**
- * Create an assessment
+ * Create a new assessment
  */
 export const createAssessment = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    
-    const {
-      title,
-      description,
-      courseId,
-      type,
-      questions,
-      dueDate,
-      timeLimit,
-      passingScore,
-      points,
-      submissionType,
-    } = req.body;
-    
+
+    const { title, description, courseId, dueDate, type, questions } = req.body;
+
     // Validate required fields
-    if (!title || !description || !courseId || !type) {
-      return res.status(400).json({ message: 'Title, description, courseId, and type are required' });
+    if (!title || !courseId || !type) {
+      return res.status(400).json({ message: 'Title, course ID, and type are required' });
     }
-    
-    // Find course
+
+    // Check if course exists and user is instructor
     const course = await Course.findById(courseId);
-    
+
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
-    
-    // Verify user is the instructor or an admin
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isAdmin = req.user.role === UserRole.ADMIN;
-    
-    if (!isInstructor && !isAdmin) {
-      return res.status(403).json({ message: 'Not authorized to create assessments for this course' });
+
+    // Check if user is instructor or admin
+    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+      return res.status(403).json({ message: 'Not authorized to add assessments to this course' });
     }
-    
+
     // Create assessment
     const assessment = new Assessment({
       title,
       description,
       course: courseId,
-      type,
-      questions: questions || [],
       dueDate,
-      timeLimit,
-      passingScore: passingScore || 60,
-      points: points || 100,
-      submissionType,
-      published: false,
+      type,
+      questions,
+      createdBy: req.user.id,
     });
-    
+
     await assessment.save();
-    
-    return res.status(201).json(assessment);
+
+    res.status(201).json(assessment);
   } catch (error) {
     console.error('Error creating assessment:', error);
-    return res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 /**
  * Get all assessments for a course
  */
-export const getCourseAssessments = async (req: Request, res: Response) => {
+export const getCourseAssessments = async (req: AuthRequest, res: Response) => {
   try {
-    const { courseId } = req.params;
-    const { type } = req.query;
-    
-    // Build query
-    const query: any = { course: courseId };
-    
-    // Filter by type if provided
-    if (type) {
-      query.type = type;
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
-    
-    // Find assessments
-    const assessments = await Assessment.find(query)
-      .sort({ createdAt: -1 });
-    
-    return res.status(200).json(assessments);
+
+    const { courseId } = req.params;
+
+    // Check if course exists
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Get assessments
+    const assessments = await Assessment.find({ course: courseId })
+      .sort({ dueDate: 1 })
+      .populate('createdBy', 'firstName lastName email');
+
+    res.json(assessments);
   } catch (error) {
-    console.error('Error getting assessments:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching assessments:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 /**
- * Get a single assessment
+ * Get assessment by ID
  */
-export const getAssessment = async (req: Request, res: Response) => {
+export const getAssessmentById = async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
     const { id } = req.params;
-    
-    // Find assessment
-    const assessment = await Assessment.findById(id);
-    
+
+    const assessment = await Assessment.findById(id)
+      .populate('createdBy', 'firstName lastName email')
+      .populate('course', 'title');
+
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
     }
-    
-    return res.status(200).json(assessment);
+
+    res.json(assessment);
   } catch (error) {
-    console.error('Error getting assessment:', error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching assessment:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 /**
- * Update an assessment
+ * Update assessment
  */
 export const updateAssessment = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    
+
     const { id } = req.params;
-    const {
-      title,
-      description,
-      questions,
-      dueDate,
-      timeLimit,
-      passingScore,
-      points,
-      submissionType,
-      published,
-    } = req.body;
-    
-    // Find assessment
+    const { title, description, dueDate, questions } = req.body;
+
     const assessment = await Assessment.findById(id);
-    
+
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
     }
-    
-    // Find course
-    const course = await Course.findById(assessment.course);
-    
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
-    
-    // Verify user is the instructor or an admin
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isAdmin = req.user.role === UserRole.ADMIN;
-    
-    if (!isInstructor && !isAdmin) {
+
+    // Check if user is creator or admin
+    if (assessment.createdBy.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to update this assessment' });
     }
-    
-    // Update assessment
+
+    // Update fields
     if (title) assessment.title = title;
     if (description) assessment.description = description;
+    if (dueDate) assessment.dueDate = dueDate;
     if (questions) assessment.questions = questions;
-    if (dueDate) assessment.dueDate = new Date(dueDate);
-    if (timeLimit !== undefined) assessment.timeLimit = timeLimit;
-    if (passingScore !== undefined) assessment.passingScore = passingScore;
-    if (points !== undefined) assessment.points = points;
-    if (submissionType) assessment.submissionType = submissionType;
-    if (published !== undefined) {
-      // If publishing for the first time, notify enrolled students
-      if (published && !assessment.published) {
-        // Get enrolled students
-        const submissions = await Submission.find({ assessment: id });
-        const enrolledStudents = await User.find({
-          _id: { $nin: submissions.map(sub => sub.student) }
-        });
-        
-        // Create notification for each student
-        const notificationPromises = enrolledStudents.map(student => {
-          const notification = new Notification({
-            user: student._id,
-            title: `New ${assessment.type === AssessmentType.QUIZ ? 'Quiz' : 'Assignment'} Available`,
-            message: `A new ${assessment.type === AssessmentType.QUIZ ? 'quiz' : 'assignment'} has been published in ${course.title}: ${assessment.title}`,
-            type: NotificationType.ASSIGNMENT,
-            resourceId: id,
-            link: `/courses/${course._id}/assessments/${id}`,
-          });
-          
-          return notification.save();
-        });
-        
-        await Promise.all(notificationPromises);
-      }
-      
-      assessment.published = published;
-    }
-    
+
     await assessment.save();
-    
-    return res.status(200).json(assessment);
+
+    res.json(assessment);
   } catch (error) {
     console.error('Error updating assessment:', error);
-    return res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 /**
- * Delete an assessment
+ * Delete assessment
  */
 export const deleteAssessment = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    
+
     const { id } = req.params;
-    
-    // Find assessment
+
     const assessment = await Assessment.findById(id);
-    
+
     if (!assessment) {
       return res.status(404).json({ message: 'Assessment not found' });
     }
-    
-    // Find course
-    const course = await Course.findById(assessment.course);
-    
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
-    
-    // Verify user is the instructor or an admin
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isAdmin = req.user.role === UserRole.ADMIN;
-    
-    if (!isInstructor && !isAdmin) {
+
+    // Check if user is creator or admin
+    if (assessment.createdBy.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to delete this assessment' });
     }
-    
-    // Delete assessment
+
     await Assessment.findByIdAndDelete(id);
-    
-    // Delete submissions
-    await Submission.deleteMany({ assessment: id });
-    
-    return res.status(200).json({ message: 'Assessment deleted successfully' });
+
+    res.json({ message: 'Assessment deleted successfully' });
   } catch (error) {
     console.error('Error deleting assessment:', error);
-    return res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -267,7 +189,7 @@ export const submitAssessment = async (req: AuthRequest, res: Response) => {
     }
     
     const { id } = req.params;
-    const { answers, fileUrl, textContent, linkUrl } = req.body;
+    const { answers } = req.body;
     
     // Find assessment
     const assessment = await Assessment.findById(id);
@@ -276,15 +198,10 @@ export const submitAssessment = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Assessment not found' });
     }
     
-    // Check if assessment is published
-    if (!assessment.published) {
-      return res.status(400).json({ message: 'Cannot submit to an unpublished assessment' });
-    }
-    
     // Check if due date has passed
+    let isLate = false;
     if (assessment.dueDate && new Date() > new Date(assessment.dueDate)) {
-      // Allow submission but mark as late
-      const status = SubmissionStatus.LATE;
+      isLate = true;
     }
     
     // Find existing submission
@@ -301,7 +218,7 @@ export const submitAssessment = async (req: AuthRequest, res: Response) => {
         student: req.user.id,
         assessment: id,
         answers: [],
-        status: SubmissionStatus.DRAFT,
+        status: SubmissionStatus.PENDING,
       });
       
       isNewSubmission = true;
@@ -309,59 +226,22 @@ export const submitAssessment = async (req: AuthRequest, res: Response) => {
     
     // Update submission
     if (answers) submission.answers = answers;
-    if (fileUrl) submission.fileUrl = fileUrl;
-    if (textContent) submission.textContent = textContent;
-    if (linkUrl) submission.linkUrl = linkUrl;
-    
-    // Check if late
-    const isLate = assessment.dueDate && new Date() > new Date(assessment.dueDate);
     
     // Update status
-    submission.status = isLate ? SubmissionStatus.LATE : SubmissionStatus.SUBMITTED;
+    submission.status = isLate ? SubmissionStatus.RESUBMITTED : SubmissionStatus.PENDING;
     submission.submittedAt = new Date();
     
     // Auto-grade quiz if possible
-    if (assessment.type === AssessmentType.QUIZ) {
+    if (assessment.type === AssessmentType.QUIZ && assessment.questions && assessment.questions.length > 0) {
       let score = 0;
       let totalPoints = 0;
       
-      // Calculate score
-      assessment.questions.forEach(question => {
-        const answer = submission.answers.find(a => a.questionId === question._id.toString());
-        
-        if (answer) {
-          const correctOptions = question.options
-            .filter(option => option.isCorrect)
-            .map(option => option._id.toString());
-            
-          // Check if answer is correct
-          if (answer.selectedOptions && answer.selectedOptions.length > 0) {
-            // For single choice, check if the selected option is correct
-            if (question.type === 'single_choice') {
-              const isCorrect = correctOptions.includes(answer.selectedOptions[0]);
-              answer.isCorrect = isCorrect;
-              answer.pointsEarned = isCorrect ? question.points : 0;
-            } 
-            // For multiple choice, check if all selected options are correct and no incorrect ones
-            else if (question.type === 'multiple_choice') {
-              const allCorrect = answer.selectedOptions.every(option => correctOptions.includes(option));
-              const allSelected = correctOptions.length === answer.selectedOptions.length;
-              answer.isCorrect = allCorrect && allSelected;
-              answer.pointsEarned = (allCorrect && allSelected) ? question.points : 0;
-            }
-          }
-          
-          score += answer.pointsEarned || 0;
-        }
-        
-        totalPoints += question.points;
-      });
+      // Simple auto-grading implementation
+      // In a real app, this would be more sophisticated
       
-      // Calculate final score as percentage
-      const scorePercentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
+      await submission.save();
       
-      submission.score = Math.round(scorePercentage);
-      submission.status = SubmissionStatus.GRADED;
+      return res.status(200).json(submission);
     }
     
     await submission.save();
@@ -376,9 +256,8 @@ export const submitAssessment = async (req: AuthRequest, res: Response) => {
           user: course.instructor,
           title: 'New Submission',
           message: `A student has submitted ${assessment.type === AssessmentType.QUIZ ? 'a quiz' : 'an assignment'}: ${assessment.title}`,
-          type: NotificationType.ASSIGNMENT,
+          type: NotificationType.ASSESSMENT,
           resourceId: id,
-          link: `/teacher/courses/${course._id}/assessments/${id}/submissions`,
         });
         
         await notification.save();
@@ -458,10 +337,7 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
     }
     
     // Verify user is the instructor or an admin
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isAdmin = req.user.role === UserRole.ADMIN;
-    
-    if (!isInstructor && !isAdmin) {
+    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to grade this submission' });
     }
     
@@ -477,11 +353,10 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
     // Create notification for student
     const notification = new Notification({
       user: submission.student,
-      title: 'Assignment Graded',
+      title: 'Assessment Graded',
       message: `Your ${assessment.type === AssessmentType.QUIZ ? 'quiz' : 'assignment'} "${assessment.title}" has been graded`,
       type: NotificationType.GRADE,
       resourceId: assessment._id.toString(),
-      link: `/courses/${course._id}/assessments/${assessment._id}/submission`,
     });
     
     await notification.save();
@@ -520,10 +395,7 @@ export const getAssessmentSubmissions = async (req: AuthRequest, res: Response) 
     }
     
     // Verify user is the instructor or an admin
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isAdmin = req.user.role === UserRole.ADMIN;
-    
-    if (!isInstructor && !isAdmin) {
+    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to view submissions for this assessment' });
     }
     
@@ -550,7 +422,7 @@ export const getAssessmentSubmissions = async (req: AuthRequest, res: Response) 
 export default {
   createAssessment,
   getCourseAssessments,
-  getAssessment,
+  getAssessmentById,
   updateAssessment,
   deleteAssessment,
   submitAssessment,

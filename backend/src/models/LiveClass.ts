@@ -2,42 +2,24 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { IUser } from './User';
 import { ICourse } from './Course';
 
-// Live class platform enum
-export enum LiveClassPlatform {
-  ZOOM = 'zoom',
-  GOOGLE_MEET = 'google_meet',
-  MICROSOFT_TEAMS = 'microsoft_teams',
-  OTHER = 'other',
-}
-
-// Live class status
-export enum LiveClassStatus {
-  SCHEDULED = 'scheduled',
-  LIVE = 'live',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-}
-
-// Live class interface
+// LiveClass interface
 export interface ILiveClass extends Document {
   title: string;
-  description: string;
+  description?: string;
   course: ICourse['_id'];
   instructor: IUser['_id'];
   startTime: Date;
   endTime: Date;
-  platform: LiveClassPlatform;
-  meetingUrl: string;
-  meetingId?: string;
-  passcode?: string;
-  status: LiveClassStatus;
-  recordingUrl?: string;
-  attendees: IUser['_id'][];
+  meetingLink: string;
+  isRecurring: boolean;
+  recursOn?: string[];
+  maxParticipants?: number;
+  isCancelled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Live class schema
+// LiveClass schema
 const LiveClassSchema: Schema = new Schema(
   {
     title: {
@@ -47,7 +29,7 @@ const LiveClassSchema: Schema = new Schema(
     },
     description: {
       type: String,
-      required: true,
+      trim: true,
     },
     course: {
       type: Schema.Types.ObjectId,
@@ -67,33 +49,25 @@ const LiveClassSchema: Schema = new Schema(
       type: Date,
       required: true,
     },
-    platform: {
-      type: String,
-      enum: Object.values(LiveClassPlatform),
-      default: LiveClassPlatform.OTHER,
-    },
-    meetingUrl: {
+    meetingLink: {
       type: String,
       required: true,
     },
-    meetingId: {
-      type: String,
+    isRecurring: {
+      type: Boolean,
+      default: false,
     },
-    passcode: {
+    recursOn: [{
       type: String,
-    },
-    status: {
-      type: String,
-      enum: Object.values(LiveClassStatus),
-      default: LiveClassStatus.SCHEDULED,
-    },
-    recordingUrl: {
-      type: String,
-    },
-    attendees: [{
-      type: Schema.Types.ObjectId,
-      ref: 'User',
+      enum: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
     }],
+    maxParticipants: {
+      type: Number,
+    },
+    isCancelled: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -104,6 +78,6 @@ const LiveClassSchema: Schema = new Schema(
 LiveClassSchema.index({ course: 1 });
 LiveClassSchema.index({ instructor: 1 });
 LiveClassSchema.index({ startTime: 1 });
-LiveClassSchema.index({ status: 1 });
+LiveClassSchema.index({ isCancelled: 1 });
 
 export default mongoose.model<ILiveClass>('LiveClass', LiveClassSchema); 

@@ -2,43 +2,60 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { IUser } from './User';
 import { ICourse } from './Course';
 
+// Assessment types enum
+export enum AssessmentType {
+  QUIZ = 'quiz',
+  ASSIGNMENT = 'assignment',
+}
+
 // Question types enum
 export enum QuestionType {
   MULTIPLE_CHOICE = 'multiple_choice',
-  SINGLE_CHOICE = 'single_choice',
   TRUE_FALSE = 'true_false',
   SHORT_ANSWER = 'short_answer',
+  ESSAY = 'essay',
+  FILE_UPLOAD = 'file_upload',
 }
 
 // Question option interface
-export interface IQuestionOption extends Document {
+export interface IQuestionOption {
+  id: string;
   text: string;
-  isCorrect: boolean;
+  isCorrect?: boolean;
 }
 
 // Question option schema
 const QuestionOptionSchema: Schema = new Schema({
+  id: {
+    type: String,
+    required: true,
+  },
   text: {
     type: String,
     required: true,
   },
   isCorrect: {
     type: Boolean,
-    required: true,
     default: false,
   },
 });
 
 // Question interface
-export interface IQuestion extends Document {
+export interface IQuestion {
+  id: string;
   text: string;
   type: QuestionType;
-  options: IQuestionOption[];
+  options?: IQuestionOption[];
   points: number;
+  correctAnswer?: string;
 }
 
 // Question schema
 const QuestionSchema: Schema = new Schema({
+  id: {
+    type: String,
+    required: true,
+  },
   text: {
     type: String,
     required: true,
@@ -51,16 +68,12 @@ const QuestionSchema: Schema = new Schema({
   options: [QuestionOptionSchema],
   points: {
     type: Number,
-    required: true,
     default: 1,
   },
+  correctAnswer: {
+    type: String,
+  },
 });
-
-// Assessment types enum
-export enum AssessmentType {
-  QUIZ = 'quiz',
-  ASSIGNMENT = 'assignment',
-}
 
 // Submission types enum
 export enum SubmissionType {
@@ -73,16 +86,12 @@ export enum SubmissionType {
 // Assessment interface
 export interface IAssessment extends Document {
   title: string;
-  description: string;
+  description?: string;
   course: ICourse['_id'];
   type: AssessmentType;
   questions: IQuestion[];
   dueDate?: Date;
-  timeLimit?: number; // in minutes, for quizzes
-  passingScore: number;
-  points: number;
-  submissionType: SubmissionType;
-  published: boolean;
+  createdBy: IUser['_id'];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -97,7 +106,7 @@ const AssessmentSchema: Schema = new Schema(
     },
     description: {
       type: String,
-      required: true,
+      trim: true,
     },
     course: {
       type: Schema.Types.ObjectId,
@@ -113,26 +122,10 @@ const AssessmentSchema: Schema = new Schema(
     dueDate: {
       type: Date,
     },
-    timeLimit: {
-      type: Number,
-    },
-    passingScore: {
-      type: Number,
-      default: 60,
-    },
-    points: {
-      type: Number,
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
       required: true,
-      default: 100,
-    },
-    submissionType: {
-      type: String,
-      enum: Object.values(SubmissionType),
-      default: SubmissionType.AUTOGRADED,
-    },
-    published: {
-      type: Boolean,
-      default: false,
     },
   },
   {
@@ -142,7 +135,8 @@ const AssessmentSchema: Schema = new Schema(
 
 // Create indexes for faster queries
 AssessmentSchema.index({ course: 1 });
+AssessmentSchema.index({ createdBy: 1 });
+AssessmentSchema.index({ dueDate: 1 });
 AssessmentSchema.index({ type: 1 });
-AssessmentSchema.index({ published: 1 });
 
 export default mongoose.model<IAssessment>('Assessment', AssessmentSchema); 

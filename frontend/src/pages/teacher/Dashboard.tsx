@@ -133,8 +133,21 @@ const TeacherDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 bg-surface-light rounded w-1/4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-surface p-6 rounded-lg h-32">
+              <div className="h-6 bg-surface-light rounded w-1/2 mb-4"></div>
+              <div className="h-10 bg-surface-light rounded w-1/3"></div>
+            </div>
+          ))}
+        </div>
+        <div className="h-8 bg-surface-light rounded w-1/4 mt-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-surface rounded-lg h-64"></div>
+          <div className="bg-surface rounded-lg h-64"></div>
+        </div>
       </div>
     );
   }
