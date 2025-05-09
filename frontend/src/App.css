@@ -1,8 +1,53 @@
+/* Default styles from template */
+body {
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Auth form specific styles */
+.auth-form {
+  width: 100%;
+  max-width: 480px;
+  z-index: 100 !important;
+  position: relative !important;
+}
+
+.auth-form * {
+  z-index: 10 !important;
+}
+
+.glass-card {
+  backdrop-filter: blur(10px);
+  background: rgba(30, 30, 30, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
   padding: 2rem;
-  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Application-wide utilities */
+.centered-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Debug styling */
+.debug-outline {
+  outline: 2px solid red;
 }
 
 .logo {

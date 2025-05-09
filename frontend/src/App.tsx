@@ -31,14 +31,14 @@ import ManageUsers from './pages/admin/ManageUsers';
 // Shared components
 import NotFound from './pages/NotFound';
 import Loading from './components/common/Loading';
+import BackgroundAnimation from './components/common/BackgroundAnimation';
+import { ToastProvider } from './components/common/Feedback';
 
 // Types
 import { UserRole } from './types';
 
 // Check if we're in dev mode with a valid clerk key
-const isDevelopmentMode = import.meta.env.DEV && 
-  (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 
-   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY === 'pk_test_placeholder');
+const isDevelopmentMode = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
 
 function App() {
   const { isLoaded, userId, getToken } = useAuth();
@@ -88,70 +88,74 @@ function App() {
   }
 
   return (
-    <>
-      <Toaster position="top-right" />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<AuthLayout />}>
-          <Route index element={<Login />} />
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
-          <Route path="verify-email" element={<VerifyEmail />} />
-        </Route>
+    <ToastProvider>
+      {/* Background particles animation */}
+      <BackgroundAnimation />
+      
+      <div className="relative z-10 min-h-screen">
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<AuthLayout />}>
+            <Route index element={<Login />} />
+            <Route path="login" element={<Login />} />
+            <Route path="register" element={<Register />} />
+            <Route path="verify-email" element={<VerifyEmail />} />
+          </Route>
 
-        {/* Protected student routes */}
-        <Route
-          path="/student/*"
-          element={
-            isDevelopmentMode || (userId && userRole === UserRole.STUDENT) ? (
-              <DashboardLayout userRole={UserRole.STUDENT} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        >
-          <Route index element={<StudentDashboard />} />
-          <Route path="courses" element={<CoursesList />} />
-          <Route path="courses/:courseId" element={<CourseDetails />} />
-          <Route path="assessments/:assessmentId" element={<AssessmentView />} />
-        </Route>
+          {/* Protected student routes */}
+          <Route
+            path="/student/*"
+            element={
+              isDevelopmentMode || (userId && userRole === UserRole.STUDENT) ? (
+                <DashboardLayout userRole={UserRole.STUDENT} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
+            <Route index element={<StudentDashboard />} />
+            <Route path="courses" element={<CoursesList />} />
+            <Route path="courses/:courseId" element={<CourseDetails />} />
+            <Route path="assessments/:assessmentId" element={<AssessmentView />} />
+          </Route>
 
-        {/* Protected teacher routes */}
-        <Route
-          path="/teacher/*"
-          element={
-            isDevelopmentMode || (userId && userRole === UserRole.TEACHER) ? (
-              <DashboardLayout userRole={UserRole.TEACHER} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        >
-          <Route index element={<TeacherDashboard />} />
-          <Route path="courses" element={<ManageCourses />} />
-          <Route path="assessments" element={<ManageAssessments />} />
-          <Route path="live-classes" element={<ManageLiveClasses />} />
-        </Route>
+          {/* Protected teacher routes */}
+          <Route
+            path="/teacher/*"
+            element={
+              isDevelopmentMode || (userId && userRole === UserRole.TEACHER) ? (
+                <DashboardLayout userRole={UserRole.TEACHER} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
+            <Route index element={<TeacherDashboard />} />
+            <Route path="courses" element={<ManageCourses />} />
+            <Route path="assessments" element={<ManageAssessments />} />
+            <Route path="live-classes" element={<ManageLiveClasses />} />
+          </Route>
 
-        {/* Protected admin routes */}
-        <Route
-          path="/admin/*"
-          element={
-            isDevelopmentMode || (userId && userRole === UserRole.ADMIN) ? (
-              <DashboardLayout userRole={UserRole.ADMIN} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<ManageUsers />} />
-        </Route>
+          {/* Protected admin routes */}
+          <Route
+            path="/admin/*"
+            element={
+              isDevelopmentMode || (userId && userRole === UserRole.ADMIN) ? (
+                <DashboardLayout userRole={UserRole.ADMIN} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<ManageUsers />} />
+          </Route>
 
-        {/* Catch-all route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </>
+          {/* Catch-all route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+    </ToastProvider>
   );
 }
 

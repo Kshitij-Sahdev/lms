@@ -12,6 +12,7 @@
   --text-secondary: #B0B0B0;
   --error: #CF6679;
   --success: #00C853;
+  --background-main: #121212;
 }
 
 body {
@@ -46,4 +47,15 @@ button {
 :focus {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Priority z-index rules */
+.z-auth {
+  z-index: 50 !important;
+}
+
+/* Make sure content appears above background animations */
+.relative-z {
+  position: relative;
+  z-index: 10;
 }
