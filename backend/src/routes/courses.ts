@@ -92,7 +92,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     }
     
     // Check if user is the course instructor or an admin
-    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+    if (course.instructor && course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to update this course' });
     }
     
@@ -125,7 +125,7 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     }
     
     // Check if user is the course instructor or an admin
-    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+    if (course.instructor && course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to delete this course' });
     }
     

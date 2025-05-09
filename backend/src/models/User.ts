@@ -63,9 +63,7 @@ const UserSchema: Schema = new Schema(
   }
 );
 
-// Create indexes for faster queries
-UserSchema.index({ email: 1 });
-UserSchema.index({ clerkId: 1 });
+// Create index only for the role field, as email and clerkId already have indexes via unique: true
 UserSchema.index({ role: 1 });
 
 export default mongoose.model<IUser>('User', UserSchema); 

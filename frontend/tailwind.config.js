@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -12,11 +13,24 @@ export default {
           light: '#FF8A3D',
           dark: '#CC5500',
         },
+        text: {
+          primary: '#FFFFFF',
+          secondary: '#CCCCCC',
+          muted: '#999999',
+        },
         background: {
           main: '#121212',
           paper: '#1E1E1E',
           elevated: '#2D2D2D',
         },
+        error: {
+          DEFAULT: '#FF5252',
+          light: '#FF7B7B',
+        },
+        surface: {
+          light: '#2D2D2D',
+          dark: '#1E1E1E',
+        }
       },
       fontFamily: {
         sans: ['Inter', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],

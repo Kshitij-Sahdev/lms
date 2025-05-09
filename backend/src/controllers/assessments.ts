@@ -30,7 +30,7 @@ export const createAssessment = async (req: AuthRequest, res: Response) => {
     }
 
     // Check if user is instructor or admin
-    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+    if (course.instructor && course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to add assessments to this course' });
     }
 
@@ -129,7 +129,7 @@ export const updateAssessment = async (req: AuthRequest, res: Response) => {
     }
 
     // Check if user is creator or admin
-    if (assessment.createdBy.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+    if (assessment.createdBy && assessment.createdBy.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to update this assessment' });
     }
 
@@ -166,7 +166,7 @@ export const deleteAssessment = async (req: AuthRequest, res: Response) => {
     }
 
     // Check if user is creator or admin
-    if (assessment.createdBy.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+    if (assessment.createdBy && assessment.createdBy.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to delete this assessment' });
     }
 
@@ -257,7 +257,7 @@ export const submitAssessment = async (req: AuthRequest, res: Response) => {
           title: 'New Submission',
           message: `A student has submitted ${assessment.type === AssessmentType.QUIZ ? 'a quiz' : 'an assignment'}: ${assessment.title}`,
           type: NotificationType.ASSESSMENT,
-          resourceId: id,
+          resourceId: assessment._id ? assessment._id.toString() : '',
         });
         
         await notification.save();
@@ -337,7 +337,7 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
     }
     
     // Verify user is the instructor or an admin
-    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+    if (course.instructor && course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to grade this submission' });
     }
     
@@ -356,7 +356,7 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
       title: 'Assessment Graded',
       message: `Your ${assessment.type === AssessmentType.QUIZ ? 'quiz' : 'assignment'} "${assessment.title}" has been graded`,
       type: NotificationType.GRADE,
-      resourceId: assessment._id.toString(),
+      resourceId: assessment._id ? assessment._id.toString() : '',
     });
     
     await notification.save();
@@ -395,7 +395,7 @@ export const getAssessmentSubmissions = async (req: AuthRequest, res: Response) 
     }
     
     // Verify user is the instructor or an admin
-    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+    if (course.instructor && course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to view submissions for this assessment' });
     }
     

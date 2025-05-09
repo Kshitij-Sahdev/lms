@@ -4,11 +4,30 @@
 
 @layer base {
   html {
-    @apply bg-background-main text-white;
+    @apply bg-background-main text-text-primary;
   }
 
   body {
     @apply min-h-screen font-sans antialiased;
+  }
+
+  /* Improved text visibility */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-text-primary font-bold;
+  }
+
+  p, span, div {
+    @apply text-text-primary;
+  }
+
+  label {
+    @apply text-text-secondary font-medium;
+  }
+
+  /* Form inputs */
+  input, textarea, select {
+    @apply bg-background-elevated border border-background-elevated text-text-primary
+           focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none;
   }
 
   /* Custom scrollbar */
@@ -41,11 +60,11 @@
   }
 
   .btn-primary {
-    @apply bg-primary hover:bg-primary-dark text-white;
+    @apply bg-primary hover:bg-primary-dark text-text-primary;
   }
 
   .btn-outline {
-    @apply border border-primary text-primary hover:bg-primary hover:text-white;
+    @apply border border-primary text-primary hover:bg-primary hover:text-text-primary;
   }
 
   /* Card component */
@@ -55,5 +74,23 @@
 
   .card-glass {
     @apply p-6 rounded-lg glass;
+  }
+
+  /* Links */
+  a {
+    @apply text-primary hover:text-primary-light transition-colors;
+  }
+
+  /* Alerts and notifications */
+  .alert {
+    @apply p-4 rounded-md mb-4;
+  }
+
+  .alert-error {
+    @apply bg-error/20 text-error;
+  }
+
+  .alert-success {
+    @apply bg-green-500/20 text-green-500;
   }
 } 

@@ -57,7 +57,7 @@ const Register = () => {
         <h2 className="text-xl font-semibold mb-4">Create Account (Development Mode)</h2>
         
         {error && (
-          <div className="bg-error/20 text-error p-3 rounded mb-4">
+          <div className="alert alert-error">
             {error}
           </div>
         )}
@@ -77,7 +77,7 @@ const Register = () => {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                className="w-full p-3 rounded bg-surface-light border border-surface-light text-white focus:border-primary"
+                className="w-full p-3 rounded bg-background-elevated border border-background-paper text-text-primary focus:border-primary"
                 placeholder="First Name"
               />
             </div>
@@ -95,7 +95,7 @@ const Register = () => {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                className="w-full p-3 rounded bg-surface-light border border-surface-light text-white focus:border-primary"
+                className="w-full p-3 rounded bg-background-elevated border border-background-paper text-text-primary focus:border-primary"
                 placeholder="Last Name"
               />
             </div>
@@ -114,7 +114,7 @@ const Register = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full p-3 rounded bg-surface-light border border-surface-light text-white focus:border-primary"
+              className="w-full p-3 rounded bg-background-elevated border border-background-paper text-text-primary focus:border-primary"
               placeholder="Enter your email"
             />
           </div>
@@ -132,7 +132,7 @@ const Register = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full p-3 rounded bg-surface-light border border-surface-light text-white focus:border-primary"
+              className="w-full p-3 rounded bg-background-elevated border border-background-paper text-text-primary focus:border-primary"
               placeholder="Create a password"
             />
           </div>
@@ -150,7 +150,7 @@ const Register = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full p-3 rounded bg-surface-light border border-surface-light text-white focus:border-primary"
+              className="w-full p-3 rounded bg-background-elevated border border-background-paper text-text-primary focus:border-primary"
               placeholder="Confirm your password"
             />
           </div>
@@ -158,7 +158,7 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary hover:bg-primary-dark text-white p-3 rounded font-medium transition-colors"
+            className="w-full bg-primary hover:bg-primary-dark text-text-primary p-3 rounded font-medium transition-colors"
           >
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
@@ -167,7 +167,7 @@ const Register = () => {
         <div className="mt-4 text-center">
           <p className="text-text-secondary">
             Already have an account?{' '}
-            <Link to="/login" className="text-primary hover:text-primary-dark">
+            <Link to="/login" className="text-primary hover:text-primary-light">
               Sign in
             </Link>
           </p>

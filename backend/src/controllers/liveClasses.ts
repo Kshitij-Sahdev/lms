@@ -42,7 +42,7 @@ export const createLiveClass = async (req: AuthRequest, res: Response) => {
     }
     
     // Verify user is the instructor or an admin
-    const isInstructor = course.instructor.toString() === req.user.id;
+    const isInstructor = course.instructor && course.instructor.toString() === req.user.id;
     const isAdmin = req.user.role === UserRole.ADMIN;
     
     if (!isInstructor && !isAdmin) {
@@ -79,7 +79,7 @@ export const createLiveClass = async (req: AuthRequest, res: Response) => {
       title: 'New Live Class Scheduled',
       message: `A new live class "${title}" has been scheduled for ${new Date(startTime).toLocaleString()}`,
       type: NotificationType.LIVE_CLASS,
-      resourceId: liveClass._id.toString(),
+      resourceId: liveClass._id ? liveClass._id.toString() : '',
       link: `/courses/${courseId}/live-classes/${liveClass._id}`,
     }));
     
@@ -180,7 +180,7 @@ export const updateLiveClass = async (req: AuthRequest, res: Response) => {
     }
     
     // Verify user is the instructor or an admin
-    const isInstructor = course.instructor.toString() === req.user.id;
+    const isInstructor = course.instructor && course.instructor.toString() === req.user.id;
     const isAdmin = req.user.role === UserRole.ADMIN;
     
     if (!isInstructor && !isAdmin) {
@@ -191,19 +191,19 @@ export const updateLiveClass = async (req: AuthRequest, res: Response) => {
     const hasTimeChanged = (startTime && new Date(startTime).getTime() !== new Date(liveClass.startTime).getTime()) ||
       (endTime && new Date(endTime).getTime() !== new Date(liveClass.endTime).getTime());
     
-    const hasMeetingUrlChanged = meetingUrl && meetingUrl !== liveClass.meetingUrl;
+    const hasMeetingUrlChanged = meetingUrl && meetingUrl !== liveClass.get('meetingUrl');
     
     // Update live class
-    if (title) liveClass.title = title;
-    if (description) liveClass.description = description;
-    if (startTime) liveClass.startTime = new Date(startTime);
-    if (endTime) liveClass.endTime = new Date(endTime);
-    if (platform) liveClass.platform = platform;
-    if (meetingUrl) liveClass.meetingUrl = meetingUrl;
-    if (meetingId) liveClass.meetingId = meetingId;
-    if (passcode) liveClass.passcode = passcode;
-    if (status) liveClass.status = status;
-    if (recordingUrl) liveClass.recordingUrl = recordingUrl;
+    if (title) liveClass.set('title', title);
+    if (description) liveClass.set('description', description);
+    if (startTime) liveClass.set('startTime', new Date(startTime));
+    if (endTime) liveClass.set('endTime', new Date(endTime));
+    if (platform) liveClass.set('platform', platform);
+    if (meetingUrl) liveClass.set('meetingUrl', meetingUrl);
+    if (meetingId) liveClass.set('meetingId', meetingId);
+    if (passcode) liveClass.set('passcode', passcode);
+    if (status) liveClass.set('status', status);
+    if (recordingUrl) liveClass.set('recordingUrl', recordingUrl);
     
     await liveClass.save();
     
@@ -218,9 +218,9 @@ export const updateLiveClass = async (req: AuthRequest, res: Response) => {
       const notifications = studentIds.map(studentId => ({
         user: studentId,
         title: 'Live Class Updated',
-        message: `The live class "${liveClass.title}" has been updated. Please check the new details.`,
+        message: `The live class "${liveClass.get('title')}" has been updated. Please check the new details.`,
         type: NotificationType.LIVE_CLASS,
-        resourceId: liveClass._id.toString(),
+        resourceId: liveClass._id ? liveClass._id.toString() : '',
         link: `/courses/${liveClass.course}/live-classes/${liveClass._id}`,
       }));
       
@@ -228,7 +228,7 @@ export const updateLiveClass = async (req: AuthRequest, res: Response) => {
     }
     
     // If status changed to LIVE, send notifications
-    if (status === LiveClassStatus.LIVE && liveClass.status !== LiveClassStatus.LIVE) {
+    if (status === LiveClassStatus.LIVE && liveClass.get('status') !== LiveClassStatus.LIVE) {
       const enrollments = await Enrollment.find({ course: liveClass.course })
         .select('student');
       
@@ -238,9 +238,9 @@ export const updateLiveClass = async (req: AuthRequest, res: Response) => {
       const notifications = studentIds.map(studentId => ({
         user: studentId,
         title: 'Live Class Started',
-        message: `The live class "${liveClass.title}" has started. Join now!`,
+        message: `The live class "${liveClass.get('title')}" has started. Join now!`,
         type: NotificationType.LIVE_CLASS,
-        resourceId: liveClass._id.toString(),
+        resourceId: liveClass._id ? liveClass._id.toString() : '',
         link: `/courses/${liveClass.course}/live-classes/${liveClass._id}`,
       }));
       
@@ -248,7 +248,7 @@ export const updateLiveClass = async (req: AuthRequest, res: Response) => {
     }
     
     // If status changed to COMPLETED and recording was added
-    if (status === LiveClassStatus.COMPLETED && recordingUrl && liveClass.status !== LiveClassStatus.COMPLETED) {
+    if (status === LiveClassStatus.COMPLETED && recordingUrl && liveClass.get('status') !== LiveClassStatus.COMPLETED) {
       const enrollments = await Enrollment.find({ course: liveClass.course })
         .select('student');
       
@@ -258,9 +258,9 @@ export const updateLiveClass = async (req: AuthRequest, res: Response) => {
       const notifications = studentIds.map(studentId => ({
         user: studentId,
         title: 'Live Class Recording Available',
-        message: `The recording for "${liveClass.title}" is now available.`,
+        message: `The recording for "${liveClass.get('title')}" is now available.`,
         type: NotificationType.LIVE_CLASS,
-        resourceId: liveClass._id.toString(),
+        resourceId: liveClass._id ? liveClass._id.toString() : '',
         link: `/courses/${liveClass.course}/live-classes/${liveClass._id}`,
       }));
       
@@ -300,35 +300,42 @@ export const deleteLiveClass = async (req: AuthRequest, res: Response) => {
     }
     
     // Verify user is the instructor or an admin
-    const isInstructor = course.instructor.toString() === req.user.id;
+    const isInstructor = course.instructor && course.instructor.toString() === req.user.id;
     const isAdmin = req.user.role === UserRole.ADMIN;
     
     if (!isInstructor && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized to delete this live class' });
     }
     
+    // Check if scheduled class is about to start (within 24 hours)
+    if (liveClass.get('status') === LiveClassStatus.SCHEDULED) {
+      const now = new Date();
+      const startTime = new Date(liveClass.startTime);
+      const diffHours = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+      
+      if (diffHours < 24) {
+        // Notify enrolled students about cancellation
+        const enrollments = await Enrollment.find({ course: liveClass.course })
+          .select('student');
+        
+        const studentIds = enrollments.map(enrollment => enrollment.student);
+        
+        // Create notifications
+        const notifications = studentIds.map(studentId => ({
+          user: studentId,
+          title: 'Live Class Cancelled',
+          message: `The live class "${liveClass.get('title')}" scheduled for ${startTime.toLocaleString()} has been cancelled.`,
+          type: NotificationType.LIVE_CLASS,
+          resourceId: course._id ? course._id.toString() : '',
+          link: `/courses/${liveClass.course}`,
+        }));
+        
+        await Notification.insertMany(notifications);
+      }
+    }
+    
     // Delete live class
     await LiveClass.findByIdAndDelete(id);
-    
-    // Notify enrolled students
-    if (liveClass.status === LiveClassStatus.SCHEDULED) {
-      const enrollments = await Enrollment.find({ course: liveClass.course })
-        .select('student');
-      
-      const studentIds = enrollments.map(enrollment => enrollment.student);
-      
-      // Create notifications
-      const notifications = studentIds.map(studentId => ({
-        user: studentId,
-        title: 'Live Class Cancelled',
-        message: `The live class "${liveClass.title}" scheduled for ${new Date(liveClass.startTime).toLocaleString()} has been cancelled.`,
-        type: NotificationType.LIVE_CLASS,
-        resourceId: course._id.toString(),
-        link: `/courses/${course._id}/live-classes`,
-      }));
-      
-      await Notification.insertMany(notifications);
-    }
     
     return res.status(200).json({ message: 'Live class deleted successfully' });
   } catch (error) {
@@ -355,26 +362,34 @@ export const joinLiveClass = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Live class not found' });
     }
     
-    // Check if student is enrolled in the course
-    const enrollment = await Enrollment.findOne({
-      student: req.user.id,
-      course: liveClass.course,
-    });
+    // Verify user is instructor or enrolled in the course
+    const isInstructor = liveClass.instructor && liveClass.instructor.toString() === req.user.id;
     
-    const isInstructor = liveClass.instructor.toString() === req.user.id;
-    const isAdmin = req.user.role === UserRole.ADMIN;
-    
-    if (!enrollment && !isInstructor && !isAdmin) {
-      return res.status(403).json({ message: 'You are not enrolled in this course' });
+    if (!isInstructor) {
+      // Check if student is enrolled
+      const enrollment = await Enrollment.findOne({
+        course: liveClass.course,
+        student: req.user.id,
+      });
+      
+      if (!enrollment) {
+        return res.status(403).json({ message: 'You must be enrolled in this course to join the live class' });
+      }
     }
     
     // Add user to attendees if not already there
-    if (!liveClass.attendees.includes(req.user.id)) {
-      liveClass.attendees.push(req.user.id);
+    const attendees = liveClass.get('attendees') || [];
+    if (!attendees.includes(req.user.id)) {
+      liveClass.set('attendees', [...attendees, req.user.id]);
       await liveClass.save();
     }
     
-    return res.status(200).json({ meetingUrl: liveClass.meetingUrl, meetingId: liveClass.meetingId, passcode: liveClass.passcode });
+    // Return meeting details
+    return res.status(200).json({ 
+      meetingUrl: liveClass.get('meetingUrl'), 
+      meetingId: liveClass.get('meetingId'), 
+      passcode: liveClass.get('passcode')
+    });
   } catch (error) {
     console.error('Error joining live class:', error);
     return res.status(500).json({ message: 'Server error' });

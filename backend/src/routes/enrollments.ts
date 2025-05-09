@@ -177,7 +177,7 @@ router.get('/courses/:courseId/students', authenticate, authorize([UserRole.TEAC
     }
     
     // Verify user is the instructor or an admin
-    if (course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
+    if (course.instructor && course.instructor.toString() !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({ message: 'Not authorized to view course students' });
     }
     

@@ -41,7 +41,7 @@ const Login = () => {
         <h2 className="text-xl font-semibold mb-4">Sign In (Development Mode)</h2>
         
         {error && (
-          <div className="bg-error/20 text-error p-3 rounded mb-4">
+          <div className="alert alert-error">
             {error}
           </div>
         )}
@@ -59,7 +59,7 @@ const Login = () => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 rounded bg-surface-light border border-surface-light text-white focus:border-primary"
+              className="w-full p-3 rounded bg-background-elevated border border-background-paper text-text-primary focus:border-primary"
               placeholder="Enter your email"
             />
           </div>
@@ -76,7 +76,7 @@ const Login = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded bg-surface-light border border-surface-light text-white focus:border-primary"
+              className="w-full p-3 rounded bg-background-elevated border border-background-paper text-text-primary focus:border-primary"
               placeholder="Enter your password"
             />
           </div>
@@ -84,7 +84,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary hover:bg-primary-dark text-white p-3 rounded font-medium transition-colors"
+            className="w-full bg-primary hover:bg-primary-dark text-text-primary p-3 rounded font-medium transition-colors"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
@@ -93,7 +93,7 @@ const Login = () => {
         <div className="mt-4 text-center">
           <p className="text-text-secondary">
             Don't have an account?{' '}
-            <Link to="/register" className="text-primary hover:text-primary-dark">
+            <Link to="/register" className="text-primary hover:text-primary-light">
               Sign up
             </Link>
           </p>

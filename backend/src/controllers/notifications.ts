@@ -71,13 +71,13 @@ export const markAsRead = async (req: AuthRequest, res: Response) => {
     }
     
     // Check if notification belongs to the user
-    if (notification.user.toString() !== req.user.id) {
+    if (notification.user && notification.user.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized to update this notification' });
     }
     
     // Mark as read
-    notification.read = true;
-    notification.readAt = new Date();
+    notification.set('read', true);
+    notification.set('readAt', new Date());
     
     await notification.save();
     
@@ -129,7 +129,7 @@ export const deleteNotification = async (req: AuthRequest, res: Response) => {
     }
     
     // Check if notification belongs to the user
-    if (notification.user.toString() !== req.user.id) {
+    if (notification.user && notification.user.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized to delete this notification' });
     }
     

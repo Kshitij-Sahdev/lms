@@ -2,6 +2,14 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { IUser } from './User';
 import { ICourse } from './Course';
 
+// LiveClass status enum
+export enum LiveClassStatus {
+  SCHEDULED = 'scheduled',
+  LIVE = 'live',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled'
+}
+
 // LiveClass interface
 export interface ILiveClass extends Document {
   title: string;
@@ -10,7 +18,13 @@ export interface ILiveClass extends Document {
   instructor: IUser['_id'];
   startTime: Date;
   endTime: Date;
-  meetingLink: string;
+  platform?: string;
+  meetingUrl?: string;
+  meetingId?: string;
+  passcode?: string;
+  recordingUrl?: string;
+  status: LiveClassStatus;
+  attendees: Array<IUser['_id']>;
   isRecurring: boolean;
   recursOn?: string[];
   maxParticipants?: number;
@@ -49,10 +63,31 @@ const LiveClassSchema: Schema = new Schema(
       type: Date,
       required: true,
     },
-    meetingLink: {
+    platform: {
       type: String,
-      required: true,
+      default: 'Zoom',
     },
+    meetingUrl: {
+      type: String,
+    },
+    meetingId: {
+      type: String,
+    },
+    passcode: {
+      type: String,
+    },
+    recordingUrl: {
+      type: String,
+    },
+    status: {
+      type: String,
+      enum: Object.values(LiveClassStatus),
+      default: LiveClassStatus.SCHEDULED,
+    },
+    attendees: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    }],
     isRecurring: {
       type: Boolean,
       default: false,
@@ -78,6 +113,7 @@ const LiveClassSchema: Schema = new Schema(
 LiveClassSchema.index({ course: 1 });
 LiveClassSchema.index({ instructor: 1 });
 LiveClassSchema.index({ startTime: 1 });
+LiveClassSchema.index({ status: 1 });
 LiveClassSchema.index({ isCancelled: 1 });
 
 export default mongoose.model<ILiveClass>('LiveClass', LiveClassSchema); 
