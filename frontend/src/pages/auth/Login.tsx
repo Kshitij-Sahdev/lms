@@ -49,10 +49,40 @@ const Login = () => {
         throw new Error('Please enter both email and password');
       }
 
-      // For development, just redirect to student dashboard
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+      // Call the password-login endpoint for both admin and development mode
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      
+      // Check if baseUrl already includes /api prefix
+      const apiPrefix = baseUrl.includes('/api') ? '' : '/api';
+      
+      const response = await fetch(`${baseUrl}${apiPrefix}/auth/password-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+
+      const data = await response.json();
+      
+      // Store token in localStorage for future API calls
+      localStorage.setItem('token', data.token);
+      
       success('Login successful! Welcome back.');
-      navigate('/student');
+
+      // Redirect based on user role
+      if (data.user.role === 'admin') {
+        navigate('/admin');
+      } else if (data.user.role === 'teacher') {
+        navigate('/teacher');
+      } else {
+        navigate('/student');
+      }
     } catch (err) {
       setError((err as Error).message);
       showError((err as Error).message);
@@ -66,7 +96,7 @@ const Login = () => {
     console.log('Rendering development login form');
     return (
       <div className="auth-form animate-fade-in border border-white/20 bg-background-paper/30 backdrop-blur-md p-8 rounded-2xl">
-        <div className="glass-card mb-8 animate-float">
+        <div className="glass-card mb-8">
           <h2 className="text-2xl font-bold mb-6 text-center text-white">
             Sign in to <span className="text-primary">Knowledge Chakra</span>
           </h2>
@@ -103,9 +133,9 @@ const Login = () => {
                 <input 
                   type="checkbox" 
                   id="remember" 
-                  className="rounded bg-background-elevated border-background-paper text-primary focus:ring-primary"
+                  className="h-4 w-4 rounded border-background-paper/50 bg-background-elevated text-primary focus:ring-2 focus:ring-primary/50 focus:ring-offset-0 focus:ring-offset-background-paper"
                 />
-                <label htmlFor="remember" className="ml-2 text-text-secondary">Remember me</label>
+                <label htmlFor="remember" className="ml-2 text-text-secondary hover:text-white transition-colors">Remember me</label>
               </div>
               <Link to="/forgot-password" className="text-primary hover:text-primary-light">
                 Forgot password?
@@ -115,20 +145,20 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full py-3"
+              className="btn btn-primary w-full py-3 bg-primary hover:bg-primary-dark text-white rounded-xl transition-all"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+            
+            <div className="text-center mt-2">
+              <p className="text-xs text-white/70">
+                Use any email with "admin" for admin access, "teacher" for teacher access, or any other email for student access
+              </p>
+            </div>
           </form>
         </div>
         
         <div className="text-center animate-fade-in">
-          <p className="text-text-secondary">
-            Don't have an account?{' '}
-            <Link to="/register" className="animated-underline text-primary">
-              Sign up
-            </Link>
-          </p>
           <p className="text-xs text-text-muted mt-2">Development mode active</p>
         </div>
       </div>
@@ -147,7 +177,6 @@ const Login = () => {
         <SignIn 
           routing="path" 
           path="/login" 
-          signUpUrl="/register"
           redirectUrl="/student"
           afterSignInUrl="/student"
           appearance={{

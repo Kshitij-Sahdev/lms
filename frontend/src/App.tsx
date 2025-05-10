@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
 import { Toaster } from 'react-hot-toast';
+import { useMockAuth } from './context/DevelopmentAuthContext';
+
+// Conditionally import useAuth to prevent errors in development mode
+let useAuth;
+const isDevelopmentMode = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
+if (!isDevelopmentMode) {
+  // Only import and use Clerk's useAuth in production mode
+  useAuth = require('@clerk/clerk-react').useAuth;
+}
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout';
@@ -27,21 +35,23 @@ import ManageLiveClasses from './pages/teacher/ManageLiveClasses';
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
 import ManageUsers from './pages/admin/ManageUsers';
+import CreateUser from './pages/admin/CreateUser';
 
 // Shared components
 import NotFound from './pages/NotFound';
 import Loading from './components/common/Loading';
-import BackgroundAnimation from './components/common/BackgroundAnimation';
 import { ToastProvider } from './components/common/Feedback';
 
 // Types
 import { UserRole } from './types';
 
-// Check if we're in dev mode with a valid clerk key
-const isDevelopmentMode = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
-
 function App() {
-  const { isLoaded, userId, getToken } = useAuth();
+  // Use the appropriate auth mechanism based on mode
+  const auth = isDevelopmentMode ? useMockAuth() : useAuth();
+  
+  // Extract needed properties
+  const { isLoaded, userId, getToken } = auth;
+  
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -89,16 +99,12 @@ function App() {
 
   return (
     <ToastProvider>
-      {/* Background particles animation */}
-      <BackgroundAnimation />
-      
       <div className="relative z-10 min-h-screen">
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<AuthLayout />}>
             <Route index element={<Login />} />
             <Route path="login" element={<Login />} />
-            <Route path="register" element={<Register />} />
             <Route path="verify-email" element={<VerifyEmail />} />
           </Route>
 
@@ -149,6 +155,7 @@ function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<ManageUsers />} />
+            <Route path="users/create" element={<CreateUser />} />
           </Route>
 
           {/* Catch-all route */}

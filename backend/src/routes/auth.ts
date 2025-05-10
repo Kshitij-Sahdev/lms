@@ -124,6 +124,60 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
+// Password login for admin and testing
+router.post('/password-login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    // Use environment variables to validate admin login
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@knowledgechakra.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'changeme123';
+
+    // Check if the login is using any of our demo accounts
+    const isDemoTeacher = email.includes('teacher') && email.endsWith('@knowledgechakra.com') && password === 'Teacher123!';
+    const isDemoStudent = email.includes('student') && email.endsWith('@knowledgechakra.com') && password === 'Student123!';
+    const isAdminLogin = email === adminEmail && password === adminPassword;
+
+    if (isAdminLogin || isDemoTeacher || isDemoStudent) {
+      // Demo account login - find the user in the database
+      const user = await User.findOne({ email });
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found. Please ensure the demo accounts are properly seeded.' });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { id: user._id, email: user.email, role: user.role },
+        process.env.JWT_SECRET || 'secret',
+        { expiresIn: '7d' }
+      );
+
+      return res.status(200).json({
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+        },
+        token,
+      });
+    }
+
+    // For non-demo users, reject the login
+    return res.status(401).json({ message: 'Invalid credentials' });
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // 2FA routes
 router.post('/2fa/send', send2FACode);
 router.post('/2fa/verify', verify2FACode);

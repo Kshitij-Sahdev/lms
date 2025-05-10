@@ -67,7 +67,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   const getVariantClasses = () => {
     switch (variant) {
       case 'glass':
-        return 'glass-input backdrop-blur-md';
+        return 'glass-input backdrop-blur-md bg-background-paper/80';
       case 'minimal':
         return 'bg-transparent border-b border-t-0 border-x-0 rounded-none px-0 focus:border-b-primary';
       case 'default':

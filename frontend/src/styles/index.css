@@ -1,6 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import '../App.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --primary: #FF6B00;
+  --primary-dark: #E65100;
+  --background: #121212;
+  --surface: #1E1E1E;
+  --surface-light: #2A2A2A;
+  --text-primary: #FFFFFF;
+  --text-secondary: #B0B0B0;
+  --error: #CF6679;
+  --success: #00C853;
+  --background-main: #121212;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Custom utility classes */
+.glassmorphism {
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+/* Focus outline for accessibility */
+:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Priority z-index rules */
+.z-auth {
+  z-index: 50 !important;
+}
+
+/* Make sure content appears above background animations */
+.relative-z {
+  position: relative;
+  z-index: 10;
+}
 
 @layer base {
   html {
@@ -13,292 +74,8 @@
 
   body {
     @apply min-h-screen font-sans antialiased;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23FF6B00' fill-opacity='0.05'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  }
-
-  /* Improved text visibility */
-  h1 {
-    @apply text-4xl sm:text-5xl font-bold text-text-primary mb-4 animate-fade-in;
-  }
-  
-  h2 {
-    @apply text-3xl sm:text-4xl font-bold text-text-primary mb-3;
-  }
-  
-  h3 {
-    @apply text-2xl sm:text-3xl font-bold text-text-primary mb-2;
-  }
-  
-  h4 {
-    @apply text-xl sm:text-2xl font-bold text-text-primary mb-2;
-  }
-  
-  h5, h6 {
-    @apply text-lg sm:text-xl font-bold text-text-primary mb-1;
-  }
-
-  p {
-    @apply text-text-primary mb-4;
-  }
-
-  label {
-    @apply text-text-secondary font-medium mb-1 block;
-  }
-
-  /* Form inputs */
-  input, textarea, select {
-    @apply w-full p-3 rounded-xl bg-background-elevated border border-background-elevated text-text-primary
-           transition-all duration-300
-           focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none
-           focus:shadow-inner-glow;
-  }
-
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    @apply w-2;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-background-paper;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-background-elevated rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary-dark transition-colors duration-300;
-  }
-  
-  /* Focus outline for accessibility */
-  :focus-visible {
-    @apply outline-none ring-2 ring-primary ring-opacity-60;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23FF6B00' fill-opacity='0.05'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 100px 100px;
   }
 }
-
-@layer components {
-  /* Glass morphism component */
-  .glass {
-    @apply relative bg-glass-gradient bg-opacity-10 backdrop-blur-glass 
-           border border-white/10 shadow-glass 
-           before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-r before:from-transparent before:via-white/5 before:to-transparent;
-  }
-
-  .glass-card {
-    @apply p-6 rounded-2xl glass transition-all duration-300 hover:shadow-glass-lg;
-  }
-  
-  .glass-input {
-    @apply bg-background-paper/50 backdrop-blur-glass border border-white/10 shadow-glass-sm;
-  }
-
-  /* Button styles */
-  .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium
-           transition-all duration-300 relative overflow-hidden
-           before:absolute before:inset-0 before:opacity-0 before:transition-opacity
-           hover:before:opacity-100 before:bg-white/10
-           active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
-  }
-
-  .btn-primary {
-    @apply bg-primary-gradient text-text-primary shadow-sm hover:shadow-md active:shadow-inner;
-  }
-
-  .btn-outline {
-    @apply border border-primary text-primary hover:bg-primary/10 active:bg-primary/20;
-  }
-  
-  .btn-glass {
-    @apply glass text-text-primary;
-  }
-  
-  .btn-icon {
-    @apply p-2 rounded-full;
-  }
-  
-  .btn-with-icon {
-    @apply inline-flex items-center gap-2;
-  }
-
-  /* Card component */
-  .card {
-    @apply p-6 rounded-2xl bg-background-paper shadow-md transition-all duration-300 animate-fade-in;
-  }
-
-  .card-hover {
-    @apply hover:shadow-lg hover:-translate-y-1 transition-all duration-300;
-  }
-
-  /* Links */
-  a {
-    @apply text-primary hover:text-primary-light transition-colors relative
-           after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-light
-           after:origin-left after:scale-x-0 after:transition-transform
-           hover:after:scale-x-100;
-  }
-  
-  /* Animated underline text */
-  .animated-underline {
-    @apply relative inline-block;
-    text-decoration: none;
-  }
-  
-  .animated-underline::after {
-    @apply absolute left-0 right-0 bottom-0 h-0.5 bg-primary origin-bottom-right scale-x-0 transition-transform duration-300 ease-out;
-    content: '';
-    transform-origin: bottom right;
-  }
-  
-  .animated-underline:hover::after {
-    @apply origin-bottom-left scale-x-100;
-    transform-origin: bottom left;
-  }
-
-  /* Alerts and notifications */
-  .alert {
-    @apply p-4 rounded-xl mb-4 animate-slide-up flex items-start gap-3 backdrop-blur-glass;
-  }
-
-  .alert-error {
-    @apply bg-error/10 text-error border border-error/20;
-  }
-
-  .alert-success {
-    @apply bg-success/10 text-success border border-success/20;
-  }
-  
-  .alert-warning {
-    @apply bg-warning/10 text-warning border border-warning/20;
-  }
-  
-  .alert-info {
-    @apply bg-info/10 text-info border border-info/20;
-  }
-  
-  /* Animated background */
-  .animated-gradient {
-    @apply bg-primary-gradient bg-size-200 animate-gradient;
-  }
-  
-  /* Loading animation */
-  .loading-dots::after {
-    content: '.';
-    animation: dots 1.5s steps(5, end) infinite;
-  }
-  
-  @keyframes dots {
-    0%, 20% { content: '.'; }
-    40% { content: '..'; }
-    60% { content: '...'; }
-    80%, 100% { content: ''; }
-  }
-  
-  /* Shimmer effect */
-  .shimmer {
-    @apply animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent bg-size-200;
-  }
-  
-  /* Page transitions */
-  .page-enter {
-    @apply animate-fade-in;
-  }
-  
-  /* Form control */
-  .form-control {
-    @apply mb-4;
-  }
-  
-  .form-control-error input,
-  .form-control-error textarea,
-  .form-control-error select {
-    @apply border-error/50 bg-error/5;
-  }
-  
-  .error-message {
-    @apply text-error text-sm mt-1 animate-slide-down;
-  }
-  
-  /* Badge */
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-  
-  .badge-primary {
-    @apply bg-primary/20 text-primary;
-  }
-  
-  .badge-success {
-    @apply bg-success/20 text-success;
-  }
-  
-  .badge-warning {
-    @apply bg-warning/20 text-warning;
-  }
-  
-  .badge-error {
-    @apply bg-error/20 text-error;
-  }
-  
-  /* Toast notification */
-  .toast {
-    @apply fixed p-4 rounded-xl glass shadow-glass-lg animate-slide-up z-50;
-  }
-  
-  .toast-top-right {
-    @apply top-4 right-4;
-  }
-  
-  .toast-top-center {
-    @apply top-4 left-1/2 -translate-x-1/2;
-  }
-  
-  .toast-bottom-right {
-    @apply bottom-4 right-4;
-  }
-  
-  /* Animated icon */
-  .animate-icon {
-    @apply transition-transform duration-300 hover:scale-110;
-  }
-  
-  /* Floating elements */
-  .float {
-    @apply animate-float;
-  }
-  
-  /* Glow effect */
-  .glow {
-    @apply relative;
-  }
-  
-  .glow::before {
-    @apply absolute inset-0 -z-10 bg-glow-gradient blur-xl opacity-70;
-    content: '';
-  }
-  
-  /* Border animation */
-  .border-pulse {
-    @apply relative rounded-xl overflow-hidden before:absolute before:inset-0 before:rounded-xl;
-    z-index: 1;
-  }
-  
-  .border-pulse::before {
-    @apply border border-primary/50 animate-pulse-slow;
-    content: '';
-    z-index: -1;
-  }
-  
-  /* Glassmorphism container with hover effect */
-  .glass-container {
-    @apply relative rounded-2xl overflow-hidden
-           transition-all duration-300 
-           hover:shadow-glass-lg hover:-translate-y-1
-           before:absolute before:inset-0 before:bg-glass-gradient before:opacity-30
-           before:transition-opacity hover:before:opacity-50;
-  }
-  
-  .glass-content {
-    @apply backdrop-blur-glass bg-background-paper/10 border border-white/10 p-6 relative z-10;
-  }
-} 

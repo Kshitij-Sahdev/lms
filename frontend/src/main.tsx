@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { ClerkProvider } from '@clerk/clerk-react'
 import App from './App'
 import './styles/index.css'
+import { MockAuthProvider } from './context/DevelopmentAuthContext'
 
 // Clerk publishable key from environment variables
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
@@ -19,7 +20,9 @@ const AppWithProviders = () => {
     console.warn('Running in development mode without Clerk authentication. Sign-in functionality will be limited.')
     return (
       <BrowserRouter>
-        <App />
+        <MockAuthProvider>
+          <App />
+        </MockAuthProvider>
       </BrowserRouter>
     )
   }

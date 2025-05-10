@@ -36,6 +36,55 @@ router.get('/', authenticate, authorize([UserRole.ADMIN]), async (req: Request, 
   }
 });
 
+// Create a new user (admin only)
+router.post('/', authenticate, authorize([UserRole.ADMIN]), async (req: Request, res: Response) => {
+  try {
+    const { firstName, lastName, email, password, role = UserRole.STUDENT } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // Create clerk user (in production, you would integrate with your auth provider)
+    // For mock implementation, just creating a placeholder clerkId
+    const clerkId = `mock-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+
+    // Create user in database
+    const user = new User({
+      firstName,
+      lastName,
+      email,
+      clerkId,
+      role,
+      requires2FA: role === UserRole.TEACHER || role === UserRole.ADMIN,
+    });
+
+    await user.save();
+
+    return res.status(201).json({
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        requires2FA: user.requires2FA,
+      }
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Update user profile
 router.put('/me', authenticate, async (req: AuthRequest, res: Response) => {
   try {
