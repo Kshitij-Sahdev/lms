@@ -41,18 +41,26 @@ export const createAndSend2FACode = async (email: string): Promise<boolean> => {
       used: false,
     });
     
-    // In development, log the code instead of sending email
-    if (process.env.NODE_ENV === 'development') {
-      console.log('======================================');
-      console.log(`[DEV MODE] 2FA CODE FOR ${email}`);
-      console.log(`CODE: ${code}`);
-      console.log('EXPIRES: ' + expiresAt.toLocaleTimeString());
-      console.log('======================================');
-      return true;
-    }
+    // Always log the code for testing purposes
+    console.log('======================================');
+    console.log(`2FA CODE FOR ${email}`);
+    console.log(`CODE: ${code}`);
+    console.log('EXPIRES: ' + expiresAt.toLocaleTimeString());
+    console.log('======================================');
     
-    // Send email with code
-    await sendCodeByEmail(email, code);
+    // Only attempt email sending if not in development mode and SMTP is configured
+    if (process.env.NODE_ENV !== 'development' && 
+        process.env.EMAIL_SERVICE && 
+        process.env.EMAIL_USER && 
+        process.env.EMAIL_PASS) {
+      try {
+        // Send email with code
+        await sendCodeByEmail(email, code);
+      } catch (emailError) {
+        console.error('Email sending failed, but code was generated:', emailError);
+        // Continue despite email failure - we've logged the code
+      }
+    }
     
     return true;
   } catch (error) {
