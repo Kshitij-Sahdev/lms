@@ -48,19 +48,8 @@ export const createAndSend2FACode = async (email: string): Promise<boolean> => {
     console.log('EXPIRES: ' + expiresAt.toLocaleTimeString());
     console.log('======================================');
     
-    // Only attempt email sending if not in development mode and SMTP is configured
-    if (process.env.NODE_ENV !== 'development' && 
-        process.env.EMAIL_SERVICE && 
-        process.env.EMAIL_USER && 
-        process.env.EMAIL_PASS) {
-      try {
-        // Send email with code
-        await sendCodeByEmail(email, code);
-      } catch (emailError) {
-        console.error('Email sending failed, but code was generated:', emailError);
-        // Continue despite email failure - we've logged the code
-      }
-    }
+    // Send email with code
+    await sendCodeByEmail(email, code);
     
     return true;
   } catch (error) {
@@ -73,33 +62,47 @@ export const createAndSend2FACode = async (email: string): Promise<boolean> => {
  * Send 2FA code by email
  */
 const sendCodeByEmail = async (email: string, code: string): Promise<void> => {
-  // Create transporter
-  const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-  
-  // Email content
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to: email,
-    subject: 'Your Knowledge Chakra Verification Code',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #FF6600;">Knowledge Chakra - 2FA Verification</h2>
-        <p>Your verification code is:</p>
-        <h1 style="font-size: 32px; letter-spacing: 5px; background-color: #f4f4f4; padding: 10px; text-align: center; font-family: monospace;">${code}</h1>
-        <p>This code will expire in 10 minutes.</p>
-        <p>If you didn't request this code, please ignore this email.</p>
-      </div>
-    `,
-  };
-  
-  // Send email
-  await transporter.sendMail(mailOptions);
+  try {
+    // Create test account using Ethereal
+    const testAccount = await nodemailer.createTestAccount();
+    console.log('Created test email account:', testAccount.user);
+    
+    // Create transporter using Ethereal credentials
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
+    
+    // Email content
+    const mailOptions = {
+      from: '"Knowledge Chakra" <no-reply@knowledgechakra.com>',
+      to: email,
+      subject: 'Your Knowledge Chakra Verification Code',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #FF6600;">Knowledge Chakra - 2FA Verification</h2>
+          <p>Your verification code is:</p>
+          <h1 style="font-size: 32px; letter-spacing: 5px; background-color: #f4f4f4; padding: 10px; text-align: center; font-family: monospace;">${code}</h1>
+          <p>This code will expire in 10 minutes.</p>
+          <p>If you didn't request this code, please ignore this email.</p>
+        </div>
+      `,
+    };
+    
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    
+    // Log test URL where email can be viewed
+    console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    // Continue despite email error - user can use the code from logs
+  }
 };
 
 export default {

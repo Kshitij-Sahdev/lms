@@ -29,7 +29,14 @@ apiInstance.interceptors.request.use(
 
 // Response interceptor for handling errors
 apiInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If response has data, return the data directly 
+    // This ensures we're always returning the actual response data, not the entire axios response
+    if (response.data) {
+      return response.data;
+    }
+    return response;
+  },
   (error: AxiosError) => {
     // Handle error responses
     const statusCode = error.response?.status;

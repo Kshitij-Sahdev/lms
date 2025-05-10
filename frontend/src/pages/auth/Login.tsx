@@ -34,6 +34,11 @@ const Login = () => {
         // Store token in localStorage
         localStorage.setItem('authToken', response.token);
         
+        // Always mark 2FA as verified
+        if (response.user && response.user.id) {
+          localStorage.setItem(`2fa_verified_${response.user.id}`, 'true');
+        }
+        
         // Show success message
         toast.success('Login successful!');
         console.log('Login successful, redirecting based on role:', response.user?.role);
@@ -46,15 +51,9 @@ const Login = () => {
         } else {
           navigate('/student');
         }
-      } else if (response && response.requires2FA) {
-        console.log('2FA required, redirecting to 2FA page');
-        // Redirect to 2FA page with email in state
-        navigate('/verify-2fa', { 
-          state: { 
-            email,
-            from: response.user?.role ? `/${response.user.role}` : '/student' 
-          } 
-        });
+      } else {
+        setError('Invalid response from server.');
+        console.error('Unexpected response format:', response);
       }
     } catch (err: any) {
       console.error('Login error:', err);

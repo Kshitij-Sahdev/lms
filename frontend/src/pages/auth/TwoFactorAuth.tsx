@@ -118,22 +118,35 @@ const TwoFactorAuth = () => {
         code: verificationCode,
       });
       
-      toast.success('Verification successful');
+      // Log the response for debugging
+      console.log('2FA verification response:', response);
       
-      // Store authentication token
-      if (response && response.token) {
-        localStorage.setItem('authToken', response.token);
+      if (response && response.data && response.data.token) {
+        // Store authentication token
+        localStorage.setItem('authToken', response.data.token);
+        
+        // Mark 2FA as verified for this user if we have user ID
+        if (response.data.user && response.data.user.id) {
+          localStorage.setItem(`2fa_verified_${response.data.user.id}`, 'true');
+        }
+        
+        toast.success('Verification successful');
         
         // Navigate to the appropriate dashboard based on the user's role
-        if (response.user?.role) {
-          navigate(`/${response.user.role}`);
+        if (response.data.user && response.data.user.role) {
+          console.log(`Redirecting to /${response.data.user.role} dashboard`);
+          navigate(`/${response.data.user.role}`);
         } else {
+          // Use the redirectPath from state or default to student
+          console.log(`Redirecting to ${redirectPath}`);
           navigate(redirectPath);
         }
       } else {
         setError('Verification succeeded but no token received');
+        console.error('Invalid response format:', response);
       }
     } catch (err: any) {
+      console.error('2FA verification error:', err);
       setError(err.response?.data?.message || 'Verification failed. Please try again.');
       toast.error('Verification failed');
     } finally {

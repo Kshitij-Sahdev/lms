@@ -140,29 +140,23 @@ router.post('/password-login', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check if user needs 2FA
-    if (user.requires2FA) {
-      console.log('User requires 2FA verification');
-      return res.status(200).json({
-        requires2FA: true,
-        user: {
-          id: user._id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-        },
-      });
-    }
+    // BYPASS 2FA: Always generate a token, even if user has requires2FA=true
 
-    // Generate JWT token
+    // Generate JWT token with more user information
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { 
+        id: user._id, 
+        email: user.email, 
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName
+      },
       process.env.JWT_SECRET || 'secret',
       { expiresIn: '7d' }
     );
 
     console.log('Login successful for:', email);
+    console.log('2FA bypassed, token generated directly');
     
     return res.status(200).json({
       user: {

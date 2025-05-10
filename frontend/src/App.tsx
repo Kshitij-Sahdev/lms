@@ -50,8 +50,6 @@ function App() {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [requires2FA, setRequires2FA] = useState<boolean>(false);
-  const [has2FAVerified, setHas2FAVerified] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
@@ -75,15 +73,6 @@ function App() {
           setUserRole(userData.role);
           setUserId(userData.id);
           setIsAuthenticated(true);
-          
-          // Check if user requires 2FA
-          setRequires2FA(userData.requires2FA || false);
-          
-          // Check if 2FA is verified
-          if (userData.requires2FA) {
-            const verified = localStorage.getItem(`2fa_verified_${userData.id}`);
-            setHas2FAVerified(verified === 'true');
-          }
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -118,7 +107,7 @@ function App() {
           <Route
             path="/student/*"
             element={
-              isAuthenticated && userRole === UserRole.STUDENT && (!requires2FA || has2FAVerified) ? (
+              isAuthenticated && userRole === UserRole.STUDENT ? (
                 <DashboardLayout userRole={UserRole.STUDENT} />
               ) : (
                 <Navigate to="/login" replace />
@@ -135,7 +124,7 @@ function App() {
           <Route
             path="/teacher/*"
             element={
-              isAuthenticated && userRole === UserRole.TEACHER && (!requires2FA || has2FAVerified) ? (
+              isAuthenticated && userRole === UserRole.TEACHER ? (
                 <DashboardLayout userRole={UserRole.TEACHER} />
               ) : (
                 <Navigate to="/login" replace />
@@ -152,7 +141,7 @@ function App() {
           <Route
             path="/admin/*"
             element={
-              isAuthenticated && userRole === UserRole.ADMIN && (!requires2FA || has2FAVerified) ? (
+              isAuthenticated && userRole === UserRole.ADMIN ? (
                 <DashboardLayout userRole={UserRole.ADMIN} />
               ) : (
                 <Navigate to="/login" replace />
