@@ -133,9 +133,9 @@ const Login = () => {
                 <input 
                   type="checkbox" 
                   id="remember" 
-                  className="h-4 w-4 rounded border-background-paper/50 bg-background-elevated text-primary focus:ring-2 focus:ring-primary/50 focus:ring-offset-0 focus:ring-offset-background-paper"
+                  className="h-3.5 w-3.5 rounded-sm border-gray-600 bg-gray-800 text-primary focus:ring-1 focus:ring-primary"
                 />
-                <label htmlFor="remember" className="ml-2 text-text-secondary hover:text-white transition-colors">Remember me</label>
+                <label htmlFor="remember" className="ml-2 text-gray-400">Remember me</label>
               </div>
               <Link to="/forgot-password" className="text-primary hover:text-primary-light">
                 Forgot password?
@@ -191,11 +191,7 @@ const Login = () => {
               footerActionLink: "text-primary hover:text-primary-light",
               dividerLine: "bg-white/10",
               dividerText: "text-text-secondary",
-            }
-          }}
-          localization={{
-            socialButtonsBlockButton: {
-              google: "hidden"
+              socialButtonsBlockButton: "hidden"
             }
           }}
         />

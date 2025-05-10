@@ -3,6 +3,18 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
 import { UserRole } from '../types';
 
+// Check if we're in dev mode
+const isDevelopmentMode = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
+
+// Mock user button for development mode
+const MockUserButton = () => (
+  <div className="flex items-center">
+    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+      <span className="text-primary text-sm">DU</span>
+    </div>
+  </div>
+);
+
 interface DashboardLayoutProps {
   userRole: UserRole;
 }
@@ -91,7 +103,7 @@ const DashboardLayout = ({ userRole }: DashboardLayoutProps) => {
         </nav>
         <div className="p-4 mt-auto border-t border-surface-light">
           <div className="flex items-center">
-            <UserButton />
+            {isDevelopmentMode ? <MockUserButton /> : <UserButton />}
             <span className="ml-4 text-sm">
               {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
             </span>

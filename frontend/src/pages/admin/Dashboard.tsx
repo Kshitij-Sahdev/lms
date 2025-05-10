@@ -5,6 +5,10 @@ import { User } from '@/types';
 import { getUserStats, getRecentUsers } from '@/utils/userService';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { UserStats } from '../../types';
+import { useMockAuth } from '@/context/DevelopmentAuthContext';
+
+// Check if we're in dev mode
+const isDevelopmentMode = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
 
 // Stats card component
 const StatsCard: React.FC<{ title: string; value: number; icon: string; change?: number }> = ({ 
@@ -83,7 +87,9 @@ const UserItem: React.FC<{ user: User }> = ({ user }) => {
 };
 
 const AdminDashboard = () => {
-  const { getToken } = useClerkAuth();
+  const clerkAuth = useClerkAuth();
+  const mockAuth = useMockAuth();
+  const getToken = isDevelopmentMode ? mockAuth.getToken : clerkAuth.getToken;
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<UserStats | null>(null);
   
