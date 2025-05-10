@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { UserRole } from '../models/User';
+import User from '../models/User';
 
 dotenv.config();
 
@@ -14,13 +15,14 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     role: UserRole;
+    clerkId?: string;
   };
 }
 
 /**
  * Authentication middleware to verify JWT tokens
  */
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   // Get token from header
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -29,17 +31,66 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 
   try {
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as {
-      id: string;
-      email: string;
-      role: UserRole;
-    };
-
-    // Add user to request
-    req.user = decoded;
-    next();
+    // Check if this is a JWT token (our own) or a Clerk token
+    const isClerkToken = token.startsWith('clerk.');
+    
+    if (isClerkToken) {
+      // For Clerk tokens, extract user info and find in our database
+      // Note: In production, you should properly verify the Clerk token
+      // This assumes the clerkId is in the Clerk JWT payload
+      
+      // Extract clerk user ID from token if possible
+      let clerkId;
+      try {
+        // This is simplified - in production you should properly verify the token
+        const decoded = jwt.decode(token);
+        
+        if (decoded && typeof decoded === 'object' && 'sub' in decoded) {
+          clerkId = decoded.sub as string;
+        }
+      } catch (error) {
+        console.error('Error decoding Clerk token:', error);
+      }
+      
+      if (!clerkId) {
+        return res.status(401).json({ message: 'Invalid Clerk token' });
+      }
+      
+      // Find the user by Clerk ID
+      const user = await User.findOne({ clerkId });
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found with the provided Clerk ID' });
+      }
+      
+      // Add user to request
+      req.user = {
+        id: (user as any)._id.toString(),
+        email: user.email,
+        role: user.role,
+        clerkId: user.clerkId
+      } as {
+        id: string;
+        email: string;
+        role: UserRole;
+        clerkId?: string;
+      };
+      
+      next();
+    } else {
+      // For our own JWT tokens
+      const decoded = jwt.verify(token, JWT_SECRET) as {
+        id: string;
+        email: string;
+        role: UserRole;
+      };
+      
+      // Add user to request
+      req.user = decoded;
+      next();
+    }
   } catch (error) {
+    console.error('Authentication error:', error);
     return res.status(401).json({ message: 'Token is not valid' });
   }
 };

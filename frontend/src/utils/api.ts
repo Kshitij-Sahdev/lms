@@ -15,6 +15,7 @@ const apiInstance = axios.create({
 // Request interceptor for adding auth token
 apiInstance.interceptors.request.use(
   (config) => {
+    // Get token from localStorage
     const token = localStorage.getItem('authToken');
     
     if (token && config.headers) {
@@ -39,9 +40,9 @@ apiInstance.interceptors.response.use(
       localStorage.removeItem('authToken');
       
       // Redirect to login if not already there
-      if (window.location.pathname !== '/sign-in') {
+      if (window.location.pathname !== '/login') {
         toast.error('Your session has expired. Please sign in again.');
-        window.location.href = '/sign-in';
+        window.location.href = '/login';
       }
     }
     
@@ -64,35 +65,37 @@ apiInstance.interceptors.response.use(
   }
 );
 
-// Export the axios instance as a named export
-export const api = apiInstance;
+// Set the token for API requests
+export const setToken = (token: string) => {
+  localStorage.setItem('authToken', token);
+};
 
 // Helper method for GET requests
-export const get = async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+export const get = async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
   const response: AxiosResponse<T> = await apiInstance.get(url, config);
   return response.data;
 };
 
 // Helper method for POST requests
-export const post = async <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
+export const post = async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
   const response: AxiosResponse<T> = await apiInstance.post(url, data, config);
   return response.data;
 };
 
 // Helper method for PUT requests
-export const put = async <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
+export const put = async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
   const response: AxiosResponse<T> = await apiInstance.put(url, data, config);
   return response.data;
 };
 
 // Helper method for PATCH requests
-export const patch = async <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
+export const patch = async <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
   const response: AxiosResponse<T> = await apiInstance.patch(url, data, config);
   return response.data;
 };
 
 // Helper method for DELETE requests
-export const del = async <T>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+export const del = async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
   const response: AxiosResponse<T> = await apiInstance.delete(url, config);
   return response.data;
 };
@@ -103,4 +106,5 @@ export default {
   put,
   patch,
   del,
+  setToken,
 }; 

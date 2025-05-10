@@ -14,8 +14,9 @@ export interface IUser extends Document {
   email: string;
   profilePicture?: string;
   role: UserRole;
-  clerkId: string;
+  clerkId?: string;
   requires2FA: boolean;
+  passwordHash?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,8 +51,11 @@ const UserSchema: Schema = new Schema(
     },
     clerkId: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
+    },
+    passwordHash: {
+      type: String,
     },
     requires2FA: {
       type: Boolean,

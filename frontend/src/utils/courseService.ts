@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 import { Course, Module, Lesson } from '@/types';
 
 /**

@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^4.30.9",
     "axios": "^1.6.2",
     "knowledge-chakra-frontend": "file:",
     "react": "^18.2.0",

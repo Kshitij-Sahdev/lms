@@ -43,7 +43,11 @@ export const createAndSend2FACode = async (email: string): Promise<boolean> => {
     
     // In development, log the code instead of sending email
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[DEV MODE] 2FA code for ${email}: ${code}`);
+      console.log('======================================');
+      console.log(`[DEV MODE] 2FA CODE FOR ${email}`);
+      console.log(`CODE: ${code}`);
+      console.log('EXPIRES: ' + expiresAt.toLocaleTimeString());
+      console.log('======================================');
       return true;
     }
     

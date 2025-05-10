@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { useMockAuth } from './context/DevelopmentAuthContext';
-
-// Conditionally import useAuth to prevent errors in development mode
-let useAuth;
-const isDevelopmentMode = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
-if (!isDevelopmentMode) {
-  // Only import and use Clerk's useAuth in production mode
-  useAuth = require('@clerk/clerk-react').useAuth;
-}
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout';
@@ -17,8 +8,8 @@ import DashboardLayout from './layouts/DashboardLayout';
 
 // Auth pages
 import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
 import VerifyEmail from './pages/auth/VerifyEmail';
+import TwoFactorAuth from './pages/auth/TwoFactorAuth';
 
 // Student pages
 import StudentDashboard from './pages/student/Dashboard';
@@ -44,56 +35,70 @@ import { ToastProvider } from './components/common/Feedback';
 
 // Types
 import { UserRole } from './types';
+import api from './utils/api';
+
+interface UserResponse {
+  id: string;
+  role: UserRole;
+  requires2FA: boolean;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
 
 function App() {
-  // Use the appropriate auth mechanism based on mode
-  const auth = isDevelopmentMode ? useMockAuth() : useAuth();
-  
-  // Extract needed properties
-  const { isLoaded, userId, getToken } = auth;
-  
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [requires2FA, setRequires2FA] = useState<boolean>(false);
+  const [has2FAVerified, setHas2FAVerified] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (isDevelopmentMode) {
-        // In development mode without Clerk, use a mock student role
-        setUserRole(UserRole.STUDENT);
+      // Check for auth token in localStorage
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
         setIsLoading(false);
         return;
       }
-
-      if (!isLoaded || !userId) {
-        setIsLoading(false);
-        return;
-      }
-
+      
       try {
-        const token = await getToken();
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
+        // Set the token in the API utility
+        api.setToken(token);
+        
+        // Call backend to get user data
+        const userData = await api.get<UserResponse>('/users/me');
+        
+        if (userData) {
           setUserRole(userData.role);
-        } else {
-          console.error('Failed to fetch user data');
+          setUserId(userData.id);
+          setIsAuthenticated(true);
+          
+          // Check if user requires 2FA
+          setRequires2FA(userData.requires2FA || false);
+          
+          // Check if 2FA is verified
+          if (userData.requires2FA) {
+            const verified = localStorage.getItem(`2fa_verified_${userData.id}`);
+            setHas2FAVerified(verified === 'true');
+          }
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        // Clear token if invalid
+        localStorage.removeItem('authToken');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchUserData();
-  }, [isLoaded, userId, getToken]);
+  }, []);
 
-  if (!isDevelopmentMode && (!isLoaded || isLoading)) {
+  // Loading state
+  if (isLoading) {
     return <Loading />;
   }
 
@@ -106,13 +111,14 @@ function App() {
             <Route index element={<Login />} />
             <Route path="login" element={<Login />} />
             <Route path="verify-email" element={<VerifyEmail />} />
+            <Route path="verify-2fa" element={<TwoFactorAuth />} />
           </Route>
 
           {/* Protected student routes */}
           <Route
             path="/student/*"
             element={
-              isDevelopmentMode || (userId && userRole === UserRole.STUDENT) ? (
+              isAuthenticated && userRole === UserRole.STUDENT && (!requires2FA || has2FAVerified) ? (
                 <DashboardLayout userRole={UserRole.STUDENT} />
               ) : (
                 <Navigate to="/login" replace />
@@ -129,7 +135,7 @@ function App() {
           <Route
             path="/teacher/*"
             element={
-              isDevelopmentMode || (userId && userRole === UserRole.TEACHER) ? (
+              isAuthenticated && userRole === UserRole.TEACHER && (!requires2FA || has2FAVerified) ? (
                 <DashboardLayout userRole={UserRole.TEACHER} />
               ) : (
                 <Navigate to="/login" replace />
@@ -146,7 +152,7 @@ function App() {
           <Route
             path="/admin/*"
             element={
-              isDevelopmentMode || (userId && userRole === UserRole.ADMIN) ? (
+              isAuthenticated && userRole === UserRole.ADMIN && (!requires2FA || has2FAVerified) ? (
                 <DashboardLayout userRole={UserRole.ADMIN} />
               ) : (
                 <Navigate to="/login" replace />
